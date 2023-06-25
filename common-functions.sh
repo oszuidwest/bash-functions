@@ -5,6 +5,28 @@ function is_silent() {
     [[ $1 == "silent" ]]
 }
 
+# Function that checks if this is a supported platform
+# Parameters:
+# $1 - The minimal Raspberry Pi model required
+check_rpi_model() {
+  # Check if the first argument is a number
+  if ! [[ $1 =~ ^[0-9]+$ ]]; then
+    echo -e "${RED}** ERROR: The argument provided is not a number. Please enter a Raspberry Pi model number. **${NC}"
+    return 1
+  fi
+
+  # Get the Raspberry Pi model number
+  local model_number=$(tr -dc '0-9' <<< $(tr -d '\0' </proc/device-tree/model))
+
+  # Check if the Raspberry Pi model number is less than the minimum required
+  if ((model_number < $1)); then
+    echo -e "${RED}** NOT RUNNING ON A RASPBERRY PI $1 OR HIGHER **${NC}"
+    echo -e "${YELLOW}This script is only tested on a Raspberry Pi $1 or higher. Press Enter to continue anyway...${NC}"
+    read -r
+  fi
+}
+
+
 # Function to check if the 'apt' package manager is present.
 # No parameters.
 function check_apt() {
