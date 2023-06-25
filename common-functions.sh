@@ -8,7 +8,7 @@ function is_silent() {
 # Function that checks if this is a Rapsberry Pi
 # Parameters:
 # $1 - The minimal Raspberry Pi model required
-check_rpi_model() {
+function check_rpi_model() {
   # Check if the first argument is a number
   if ! [[ $1 =~ ^[0-9]+$ ]]; then
     echo -e "${RED}** ERROR: The argument provided is not a number. Please enter a Raspberry Pi model number. **${NC}"
@@ -27,7 +27,7 @@ check_rpi_model() {
 }
 
 # Function to check if running as root
-are_we_root() {
+function are_we_root() {
   if [[ "$(id -u)" -ne 0 ]]; then
     echo -e "${RED}This script must be run as root. Please run 'sudo su' first.${NC}"
     exit 1
