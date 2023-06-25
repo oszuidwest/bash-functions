@@ -16,6 +16,7 @@ function is_silent() {
 }
 
 # Function that checks if this is a Linux distribution
+# No parameters.
 function is_this_linux() {
   if [ "$(uname -s)" != "Linux" ]; then
     echo -e "${RED}Error: this script does not support '$(uname -s)' Operating System. Exiting.${NC}"
@@ -24,6 +25,7 @@ function is_this_linux() {
 }
 
 # Function that checks if this system is 64-bit
+# No parameters.
 function is_this_os_64bit() {
   if [[ $(getconf LONG_BIT) -ne 64 ]]; then
     echo -e "${RED}Error: 64-bit operating system required.${NC}"
@@ -53,6 +55,7 @@ function check_rpi_model() {
 }
 
 # Function to check if running as root
+# No parameters.
 function are_we_root() {
   if [[ "$(id -u)" -ne 0 ]]; then
     echo -e "${RED}Error: this script must be run as root. Please run 'sudo su' first.${NC}"
