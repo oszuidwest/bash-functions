@@ -117,8 +117,8 @@ function set_colors() {
     NC='\033[0m'
 }
 
-# Function to prompt the user for a input.
-# If the user doesn't provide a value, a default value is assigned.
+# Function to prompt the user for input.
+# If the user doesn't provide a value, the default value is assigned.
 # Parameters:
 # $1 - The variable name (will be all caps)
 # $2 - The default value for the variable
