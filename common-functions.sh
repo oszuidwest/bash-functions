@@ -40,13 +40,18 @@ function check_apt() {
 # Parameters:
 # $1 - (Optional) The first argument, which should be "silent" to suppress output.
 function update_os() {
-    is_silent $1 && output_redirection='> /dev/null 2>&1' || output_redirection=''
     check_apt
-
-    echo -e "${BLUE}►► Updating all OS packages...${NC}"
-    apt -qq -y update ${output_redirection}
-    apt -qq -y full-upgrade ${output_redirection}
-    apt -qq -y autoremove ${output_redirection}
+    if is_silent $1; then
+        echo -e "${BLUE}►► Updating all OS packages in silent mode...${NC}"
+        eval "apt -qq -y update > /dev/null 2>&1"
+        eval "apt -qq -y full-upgrade > /dev/null 2>&1"
+        eval "apt -qq -y autoremove > /dev/null 2>&1"
+    else
+        echo -e "${BLUE}►► Updating all OS packages...${NC}"
+        apt -qq -y update
+        apt -qq -y full-upgrade
+        apt -qq -y autoremove
+    fi
 }
 
 # Function to install packages using 'apt' package manager.
