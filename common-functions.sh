@@ -5,6 +5,13 @@ function is_silent() {
     [[ $1 == "silent" ]]
 }
 
+# Function that checks if this is a Linux distribution
+function is_this_linux() {
+  if [ "$(uname -s)" != "Linux" ]; then
+    echo -e "${RED}This script does not support '$(uname -s)' Operating System. Exiting.${NC}"
+    exit 1
+  fi
+
 # Function that checks if this is a Rapsberry Pi
 # Parameters:
 # $1 - The minimal Raspberry Pi model required
