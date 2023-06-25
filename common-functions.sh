@@ -72,7 +72,8 @@ function install_packages() {
     shift
     echo -e "${BLUE}►► Installing dependencies...${NC}"
     for package in "$@"; do
-        eval "apt-get -qq -y install ${package} ${output_redirection}"
+        eval "apt -qq -y update ${output_redirection}"
+        eval "apt -qq -y install ${package} ${output_redirection}"
     done
 }
 
