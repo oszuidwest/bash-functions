@@ -140,7 +140,7 @@ function ask_user {
 
     case $var_type in
       'y/n')
-        if [[ "$input" =~ ^(y|n|yes|no)$ ]]; then
+        if [[ "$input" =~ ^(y|n)$ ]]; then
           break
         else
           echo "Invalid input. Please enter y or n."
