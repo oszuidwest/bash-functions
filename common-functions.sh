@@ -8,7 +8,15 @@ function is_silent() {
 # Function that checks if this is a Linux distribution
 function is_this_linux() {
   if [ "$(uname -s)" != "Linux" ]; then
-    echo -e "${RED}This script does not support '$(uname -s)' Operating System. Exiting.${NC}"
+    echo -e "${RED}Error: this script does not support '$(uname -s)' Operating System. Exiting.${NC}"
+    exit 1
+  fi
+}
+
+# Function that checks if this system is 64-bit
+function is_this_os_64bit() {
+  if [[ $(getconf LONG_BIT) -ne 64 ]]; then
+    echo -e "${RED}Error: 64-bit operating system required.${NC}"
     exit 1
   fi
 }
@@ -19,7 +27,7 @@ function is_this_linux() {
 function check_rpi_model() {
   # Check if the first argument is a number
   if ! [[ $1 =~ ^[0-9]+$ ]]; then
-    echo -e "${RED}** ERROR: The argument provided is not a number. Please enter a Raspberry Pi model number. **${NC}"
+    echo -e "${RED}Error: the argument provided is not a number. Please enter a Raspberry Pi model number. **${NC}"
     return 1
   fi
 
@@ -37,7 +45,7 @@ function check_rpi_model() {
 # Function to check if running as root
 function are_we_root() {
   if [[ "$(id -u)" -ne 0 ]]; then
-    echo -e "${RED}This script must be run as root. Please run 'sudo su' first.${NC}"
+    echo -e "${RED}Error: this script must be run as root. Please run 'sudo su' first.${NC}"
     exit 1
   fi
 }
@@ -46,7 +54,7 @@ function are_we_root() {
 # No parameters.
 function check_apt() {
     if ! command -v apt > /dev/null 2>&1; then
-        echo -e "${RED}apt is not installed. Exiting...${NC}"
+        echo -e "${RED}Error: apt is not installed. Exiting...${NC}"
         exit 1
     fi
 }
@@ -95,7 +103,7 @@ function set_timezone() {
         ln -fs /usr/share/zoneinfo/$timezone /etc/localtime > /dev/null
         dpkg-reconfigure -f noninteractive tzdata > /dev/null
     else
-        echo "Invalid timezone: ${timezone}"
+        echo -e "${RED} Error: Invalid timezone: ${timezone}${NC}"
     fi
 }
 
