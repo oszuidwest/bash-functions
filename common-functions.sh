@@ -116,3 +116,56 @@ function set_colors() {
     BLUE='\033[1;34m'
     NC='\033[0m'
 }
+
+# Function to prompt the user for a input.
+# If the user doesn't provide a value, a default value is assigned.
+# Parameters:
+# $1 - The variable name (will be all caps)
+# $2 - The default value for the variable
+# $3 - The prompt to display to the user
+# $4 - (Optional) The type of the variable (y/n, num, str). Default is str.
+# Example:
+# ask_user "MY_NUM" "1" "Please enter a number" "num"
+function ask_user {
+  local var_name="$1"
+  local default_value="$2"
+  local prompt="$3"
+  local var_type="${4:-str}"
+
+  local input
+
+  while true; do
+    read -p "${prompt} [default: ${default_value}]: " input
+    input="${input:-$default_value}"
+
+    case $var_type in
+      'y/n')
+        if [[ "$input" =~ ^(y|n|yes|no)$ ]]; then
+          break
+        else
+          echo "Invalid input. Please enter y or n."
+        fi
+        ;;
+      'num')
+        if [[ "$input" =~ ^[0-9]+$ ]]; then
+          break
+        else
+          echo "Invalid input. Please enter a number."
+        fi
+        ;;
+      'str')
+        if [[ -n "$input" ]]; then
+          break
+        else
+          echo "Invalid input. Please enter a string."
+        fi
+        ;;
+      *)
+        echo "Unknown validation type: $var_type"
+        return 1
+        ;;
+    esac
+  done
+
+  eval "$var_name=\"$input\""
+}
