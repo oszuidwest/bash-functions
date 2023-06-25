@@ -11,6 +11,7 @@ function is_this_linux() {
     echo -e "${RED}This script does not support '$(uname -s)' Operating System. Exiting.${NC}"
     exit 1
   fi
+}
 
 # Function that checks if this is a Rapsberry Pi
 # Parameters:
