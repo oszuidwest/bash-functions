@@ -1,3 +1,13 @@
+# Function to initialize color variables for terminal text.
+# No parameters.
+function set_colors() {
+    GREEN='\033[1;32m'
+    RED='\033[1;31m'
+    YELLOW='\033[0;33m'
+    BLUE='\033[1;34m'
+    NC='\033[0m'
+}
+
 # Function to check if the first argument is 'silent'.
 # Parameters:
 # $1 - The first argument, which should be "silent" to suppress output.
@@ -105,16 +115,6 @@ function set_timezone() {
     else
         echo -e "${RED} Error: Invalid timezone: ${timezone}${NC}"
     fi
-}
-
-# Function to initialize color variables for terminal text.
-# No parameters.
-function set_colors() {
-    GREEN='\033[1;32m'
-    RED='\033[1;31m'
-    YELLOW='\033[0;33m'
-    BLUE='\033[1;34m'
-    NC='\033[0m'
 }
 
 # Function to prompt the user for input.
