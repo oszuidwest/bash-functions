@@ -26,6 +26,13 @@ check_rpi_model() {
   fi
 }
 
+# Function to check if running as root
+are_we_root() {
+  if [[ "$(id -u)" -ne 0 ]]; then
+    echo -e "${RED}This script must be run as root. Please run 'sudo su' first.${NC}"
+    exit 1
+  fi
+}
 
 # Function to check if the 'apt' package manager is present.
 # No parameters.
