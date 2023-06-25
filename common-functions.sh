@@ -5,7 +5,7 @@ function is_silent() {
     [[ $1 == "silent" ]]
 }
 
-# Function that checks if this is a supported platform
+# Function that checks if this is a Rapsberry Pi
 # Parameters:
 # $1 - The minimal Raspberry Pi model required
 check_rpi_model() {
