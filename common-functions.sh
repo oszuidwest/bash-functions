@@ -1,9 +1,12 @@
 # Function to check if the first argument is 'silent'.
+# Parameters:
+# $1 - The first argument, which should be "silent" to suppress output.
 function is_silent() {
     [[ $1 == "silent" ]]
 }
 
 # Function to check if the 'apt' package manager is present.
+# No parameters.
 function check_apt() {
     if ! command -v apt > /dev/null 2>&1; then
         echo -e "${RED}apt is not installed. Exiting...${NC}"
@@ -12,7 +15,8 @@ function check_apt() {
 }
 
 # Function to update the OS using 'apt' package manager.
-# Checks if the function should run silently and then performs the update operations.
+# Parameters:
+# $1 - (Optional) The first argument, which should be "silent" to suppress output.
 function update_os() {
     is_silent $1 && output_redirection='> /dev/null 2>&1' || output_redirection=''
     check_apt
@@ -24,8 +28,9 @@ function update_os() {
 }
 
 # Function to install packages using 'apt' package manager.
-# Checks if the function should run silently, removes the 'silent' option from the arguments,
-# and then installs each of the packages in the remaining arguments.
+# Parameters:
+# $1 - (Optional) The first argument, which should be "silent" to suppress output.
+# $@ - All the arguments, which should be the names of packages to install.
 function install_packages() {
     is_silent $1 && output_redirection='> /dev/null 2>&1' || output_redirection=''
     check_apt
@@ -38,7 +43,8 @@ function install_packages() {
 }
 
 # Function to set the system timezone.
-# Checks if the provided timezone is valid and then sets the timezone.
+# Parameters:
+# $1 - The first argument, which should be a valid timezone, e.g. "Europe/Amsterdam".
 function set_timezone() {
     local timezone=$1
     if [ -f "/usr/share/zoneinfo/${timezone}" ]; then
@@ -51,7 +57,7 @@ function set_timezone() {
 }
 
 # Function to initialize color variables for terminal text.
-# Sets the colors Green, Red, Yellow, Blue, and No Color.
+# No parameters.
 function set_colors() {
     GREEN='\033[1;32m'
     RED='\033[1;31m'
