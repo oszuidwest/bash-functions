@@ -19,7 +19,13 @@ function update_os() {
     else
         output_redirection=''
     fi
-    
+
+    # Check if 'apt' is present, exit if it's not
+    if ! command -v apt > /dev/null 2>&1; then
+        echo -e "${RED}apt is not installed. Exiting...${NC}"
+        exit 1
+    fi
+
     # Update the OS
     echo -e "${BLUE}►► Updating all OS packages...${NC}"
     apt -qq -y update ${output_redirection}
@@ -48,6 +54,12 @@ function install_packages() {
         output_redirection='> /dev/null 2>&1'
     else
         output_redirection=''
+    fi
+
+    # Check if 'apt-get' is present, exit if it's not
+    if ! command -v apt > /dev/null 2>&1; then
+        echo -e "${RED}apt is not installed. Exiting...${NC}"
+        exit 1
     fi
 
     # Remove 'silent' from the arguments list, leaving only the packages
