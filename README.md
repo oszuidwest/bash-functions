@@ -32,3 +32,23 @@ fi
 # Source the functions file
 source /tmp/functions.sh
 ```
+
+And use it like this:
+
+```bash
+# Example
+set_colors
+echo -e "${GREEN}This text is green!${NC}"
+```
+
+### Note
+This script should be run on a Unix-like system, such as Linux, that uses the Bash shell and 'apt' package manager. Certain functions specifically check for these conditions and will exit if they are not met.
+
+Always ensure to use the correct permissions when running scripts that import these functions. For instance, functions like update_os and install_packages should be run with root permissions.
+
+Be aware that the ask_user function does not just prompt the user for input, but also assigns the input to a variable. The name of the variable is passed as the first argument, and the function uses the eval command to assign the input to it. It's important to only pass safe, pre-defined strings as the first argument.
+
+# License
+This project is licensed under the MIT License - see the LICENSE.md file for details. 
+
+You are welcome to share bugs, feedback and ideas with `techniek@zuidwesttv.nl` or to open a pull request.
