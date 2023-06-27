@@ -57,4 +57,4 @@ Be aware that the `ask_user` function does not just prompt the user for input, b
 # License
 This project is licensed under the MIT License - see the LICENSE.md file for details. 
 
-You are welcome to share bugs, feedback and ideas with `techniek@zuidwesttv.nl` or to open a pull request.
+Bugs, feedback, and ideas are welcome at `techniek@zuidwesttv.nl` or through pull requests.
