@@ -120,12 +120,16 @@ function set_timezone() {
     fi
 }
 
-# Function to check if a command is installed
-function check_command {
-  if ! command -v "$1" &> /dev/null; then
-    echo -e "${RED} Error: Installation failed. $1 is not succesfully installed.${NC}"
-    INSTALL_FAILED=true
-  fi
+# Function to check the installation of packages that provide required commands
+# Parameters:
+# $@ - All the arguments, which should be the names of the commands to check.
+function check_required_command {
+  for cmd in "$@"; do
+    if ! command -v "$cmd" &> /dev/null; then
+      echo -e "${RED} Error: Installation failed. $cmd is not successfully installed.${NC}"
+      INSTALL_FAILED=true
+    fi
+  done
 }
 
 # Function to prompt the user for input.
