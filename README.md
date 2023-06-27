@@ -45,6 +45,8 @@ Or this to ask the user for input, set a default (n) and validate the input (it 
 ask_user "SSL" "n" "Do you want Let's Encrypt to get a certificate for this server? (y/n)" "y/n"
 ```
 
+All functions are documented inline with their parameters. 
+
 ### Note
 This script should be run on a Unix-like system, such as Linux, that uses the Bash shell and 'apt' package manager. Certain functions specifically check for these conditions and will exit if they are not met.
 
