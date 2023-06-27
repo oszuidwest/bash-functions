@@ -120,6 +120,9 @@ function set_timezone() {
     fi
 }
 
+# -----------------------------------------------------------------
+# @ TODO: REFACTOR THIS TO A MANDATORY COMMAND OR FILE FUNCTION
+# -----------------------------------------------------------------
 # Function to check the installation of packages that provide required commands
 # Parameters:
 # $@ - All the arguments, which should be the names of the commands to check.
