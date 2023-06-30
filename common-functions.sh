@@ -6,6 +6,8 @@ function set_colors() {
     YELLOW='\033[0;33m'
     BLUE='\033[1;34m'
     NC='\033[0m'
+    BOLD='\033[1m'
+    UNDERLINE='\033[4m'
 }
 
 # Function to check if the first argument is 'silent'.
