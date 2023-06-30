@@ -79,7 +79,7 @@ function update_os() {
     check_apt
     if is_silent $1; then
         echo -e "${BLUE}►► Updating all OS packages in silent mode...${NC}"
-        display_spinner
+        display_spinner $!
         eval "apt -qq -y update > /dev/null 2>&1"
         eval "apt -qq -y full-upgrade > /dev/null 2>&1"
         eval "apt -qq -y autoremove > /dev/null 2>&1"
@@ -101,7 +101,7 @@ function install_packages() {
 
     shift
     echo -e "${BLUE}►► Installing dependencies...${NC}"
-    display_spinner
+    display_spinner $!
     for package in "$@"; do
         eval "apt -qq -y update ${output_redirection}"
         eval "apt -qq -y install ${package} ${output_redirection}"
