@@ -79,7 +79,6 @@ function update_os() {
     check_apt
     if is_silent $1; then
         echo -e "${BLUE}►► Updating all OS packages in silent mode...${NC}"
-        display_spinner $!
         eval "apt -qq -y update > /dev/null 2>&1"
         eval "apt -qq -y full-upgrade > /dev/null 2>&1"
         eval "apt -qq -y autoremove > /dev/null 2>&1"
@@ -101,7 +100,6 @@ function install_packages() {
 
     shift
     echo -e "${BLUE}►► Installing dependencies...${NC}"
-    display_spinner $!
     for package in "$@"; do
         eval "apt -qq -y update ${output_redirection}"
         eval "apt -qq -y install ${package} ${output_redirection}"
@@ -195,20 +193,4 @@ function ask_user {
   done
 
   eval "$var_name=\"$input\""
-}
-
-# Function that outputs a spinner
-# No parameters.
-function display_spinner() {
-  local -r delay='0.3'
-  local spinstr='\|/-'
-  local temp
-  while ps -p "$1" >>/dev/null; do
-    temp="${spinstr#?}"
-    printf " [${BLUE}%c${NC}]  " "${spinstr}"
-    spinstr=${temp}${spinstr%"${temp}"}
-    sleep "${delay}"
-    printf "\b\b\b\b\b\b"
-  done
-  printf "\r"
 }
