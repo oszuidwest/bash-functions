@@ -3,7 +3,7 @@ This is a Bash shell library that provides a set of common utility functions to 
 
 ## Function definitions
 
-1. `set_colors`: Initializes color variables for terminal text.
+1. `set_colors`: Initializes color and text variables for terminal text.
 2. `is_silent`: Checks if the first argument is 'silent'. If it is, output from commands can be suppressed.
 3. `is_this_linux`: Checks if the script is running on a Linux distribution.
 4. `is_this_os_64bit`: Checks if the system is a 64-bit system.
