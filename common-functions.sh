@@ -194,3 +194,19 @@ function ask_user {
 
   eval "$var_name=\"$input\""
 }
+
+# Function that outputs a spinner
+# No parameters.
+function display_spinner() {
+  local -r delay='0.3'
+  local spinstr='\|/-'
+  local temp
+  while ps -p "$1" >>/dev/null; do
+    temp="${spinstr#?}"
+    printf " [${BLUE}%c${NC}]  " "${spinstr}"
+    spinstr=${temp}${spinstr%"${temp}"}
+    sleep "${delay}"
+    printf "\b\b\b\b\b\b"
+  done
+  printf "\r"
+}
