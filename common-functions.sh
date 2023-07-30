@@ -143,7 +143,7 @@ function check_required_command {
 # $1 - The variable name (will be all caps)
 # $2 - The default value for the variable
 # $3 - The prompt to display to the user
-# $4 - (Optional) The type of the variable (y/n, num, str, email). Default is str.
+# $4 - (Optional) The type of the variable (y/n, num, str, email, host). Default is str.
 # Example:
 # ask_user "MY_NUM" "1" "Please enter a number" "num"
 function ask_user {
@@ -187,6 +187,13 @@ function ask_user {
           echo "Invalid input. Please enter a valid e-mail address."
         fi
         ;;
+      'host')
+        if [[ "$input" =~ ^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$ ]]; then
+          break
+        else
+          echo "Invalid input. Please enter a valid hostname."
+        fi
+        ;;  
       *)
         echo "Unknown validation type: $var_type"
         return 1
