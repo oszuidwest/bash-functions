@@ -14,7 +14,7 @@ This is a Bash shell library that provides a set of common utility functions to 
 9. `install_packages`: Installs packages using the 'apt' package manager. 
 10. `set_timezone`: Sets the system timezone.
 11. `check_required_command`: Checks if the system has specific commands installed. (WIP)
-12. `ask_user`: Prompts the user for input with different input types including 'y/n', 'num', 'str', 'email' and 'hostname'.
+12. `ask_user`: Prompts the user for input with different input types including 'y/n', 'num', 'str', 'email' and 'host'.
 
 ## How to Use
 
