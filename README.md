@@ -1,5 +1,5 @@
 # bash-functions
-This is a Bash shell library that provides a set of common utility functions to ease and streamline the scripting process in Unix-like environments.
+This is a Bash shell library that provides a set of common utility functions to ease and streamline the scripting process in Debian-like environments.
 
 ## Function definitions
 
