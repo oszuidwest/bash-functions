@@ -39,32 +39,32 @@ function is_this_os_64bit() {
 # Parameters:
 # $1 - The minimal Raspberry Pi model required
 function check_rpi_model() {
-    # Check if the first argument is a number
-    if ! [[ $1 =~ ^[0-9]+$ ]]; then
-        echo -e "${RED}Error: the argument provided is not a number. Please enter a Raspberry Pi model number.${NC}"
-        return 1
-    fi
+  # Check if the first argument is a number
+  if ! [[ $1 =~ ^[0-9]+$ ]]; then
+    echo -e "${RED}Error: the argument provided is not a number. Please enter a Raspberry Pi model number.${NC}"
+    exit 1
+  fi
 
-    # Read the Raspberry Pi model from the system file
-    local model=$(cat /proc/device-tree/model)
+  # Read the Raspberry Pi model from the system file
+  local model=$(cat /proc/device-tree/model)
 
-    # Extract the main model number
-    local detected_model_number
-    if [[ $model =~ "Raspberry Pi ([0-9]+)" ]]; then
-        detected_model_number=${BASH_REMATCH[1]}
-    elif [[ $model =~ "Raspberry Pi Model" ]]; then
-        detected_model_number=1
-    else
-        echo -e "${RED}** NOT RUNNING ON A RECOGNIZED RASPBERRY PI MODEL **${NC}"
-        return 1
-    fi
+  # Extract the main model number
+  local detected_model_number
+  if [[ $model =~ "Raspberry Pi ([0-9]+)" ]]; then
+    detected_model_number=${BASH_REMATCH[1]}
+  elif [[ $model =~ "Raspberry Pi Model" ]]; then
+    detected_model_number=1
+  else
+    echo -e "${RED}** NOT RUNNING ON A RECOGNIZED RASPBERRY PI MODEL **${NC}"
+    exit 1
+  fi
 
-    # Check if the Raspberry Pi model number is less than the minimum required
-    if ((detected_model_number < $1)); then
-        echo -e "${RED}** NOT RUNNING ON A RASPBERRY PI $1 OR HIGHER **${NC}"
-        echo -e "${YELLOW}This script is only tested on a Raspberry Pi $1 or higher. Press Enter to continue anyway...${NC}"
-        read -r
-    fi
+  # Check if the Raspberry Pi model number is less than the minimum required
+  if ((detected_model_number < $1)); then
+    echo -e "${RED}** NOT RUNNING ON A RASPBERRY PI $1 OR HIGHER **${NC}"
+    echo -e "${YELLOW}This script is only tested on a Raspberry Pi $1 or higher. Press Enter to continue anyway...${NC}"
+    read -r
+  fi
 }
 
 # Function to check if running as root
