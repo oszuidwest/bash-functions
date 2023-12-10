@@ -39,7 +39,6 @@ function is_this_os_64bit() {
 # Parameters:
 # $1 - The minimal Raspberry Pi model required
 function check_rpi_model() {
-  # Check if the first argument is a number
   if ! [[ $1 =~ ^[0-9]+$ ]]; then
     echo -e "${RED}Error: the argument provided is not a number. Please enter a Raspberry Pi model number.${NC}"
     exit 1
