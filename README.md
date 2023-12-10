@@ -7,7 +7,7 @@ This is a Bash shell library that provides a set of common utility functions to 
 2. `is_silent`: Checks if the first argument is 'silent'. If it is, output from commands can be suppressed.
 3. `is_this_linux`: Checks if the script is running on a Linux distribution.
 4. `is_this_os_64bit`: Checks if the system is a 64-bit system.
-5. `check_rpi_model`: Checks if the script is running on a Raspberry Pi with a model number higher than the input parameter.
+5. `check_rpi_model`: Checks if the script is running on a Raspberry Pi with a model number equal to or higher than the input parameter.
 6. `are_we_root`: Checks if the script is running as root.
 7. `check_apt`: Checks if the 'apt' package manager is present.
 8. `update_os`: Updates the operating system using the 'apt' package manager.
