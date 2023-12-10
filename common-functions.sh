@@ -1,4 +1,4 @@
-# Function to initialize color variables for terminal text.
+# Initialize color variables for terminal text.
 # No parameters.
 function set_colors() {
     GREEN='\033[1;32m'
@@ -10,14 +10,14 @@ function set_colors() {
     UNDERLINE='\033[4m'
 }
 
-# Function to check if the first argument is 'silent'.
+# Checks if the first argument is 'silent'.
 # Parameters:
 # $1 - The first argument, which should be "silent" to suppress output.
 function is_silent() {
     [[ $1 == "silent" ]]
 }
 
-# Function that checks if this is a Linux distribution
+# Checks if this is a Linux distribution
 # No parameters.
 function is_this_linux() {
   if [ "$(uname -s)" != "Linux" ]; then
@@ -26,7 +26,7 @@ function is_this_linux() {
   fi
 }
 
-# Function that checks if this system is 64-bit
+# Checks if this system is 64-bit
 # No parameters.
 function is_this_os_64bit() {
   if [[ $(getconf LONG_BIT) -ne 64 ]]; then
@@ -35,7 +35,7 @@ function is_this_os_64bit() {
   fi
 }
 
-# Function that checks if this is a Raspberry Pi
+# Checks if this is a Raspberry Pi
 # Parameters:
 # $1 - The minimal Raspberry Pi model required
 function check_rpi_model() {
@@ -67,7 +67,7 @@ function check_rpi_model() {
   fi
 }
 
-# Function to check if running as root
+# Check if running as root
 # No parameters.
 function are_we_root() {
   if [[ "$(id -u)" -ne 0 ]]; then
@@ -76,7 +76,7 @@ function are_we_root() {
   fi
 }
 
-# Function to check if the 'apt' package manager is present.
+# Check if the 'apt' package manager is present.
 # No parameters.
 function check_apt() {
     if ! command -v apt > /dev/null 2>&1; then
@@ -85,7 +85,7 @@ function check_apt() {
     fi
 }
 
-# Function to update the OS using 'apt' package manager.
+# Update the OS using 'apt' package manager.
 # Parameters:
 # $1 - (Optional) The first argument, which should be "silent" to suppress output.
 function update_os() {
@@ -103,7 +103,7 @@ function update_os() {
     fi
 }
 
-# Function to install packages using 'apt' package manager.
+# Installs packages using 'apt' package manager.
 # Parameters:
 # $1 - (Optional) The first argument, which should be "silent" to suppress output.
 # $@ - All the arguments, which should be the names of packages to install.
@@ -119,7 +119,7 @@ function install_packages() {
     done
 }
 
-# Function to set the system timezone.
+# Set the system timezone.
 # Parameters:
 # $1 - The first argument, which should be a valid timezone, e.g. "Europe/Amsterdam".
 function set_timezone() {
@@ -136,7 +136,7 @@ function set_timezone() {
 # -----------------------------------------------------------------
 # @ TODO: REFACTOR THIS TO A MANDATORY COMMAND OR FILE FUNCTION
 # -----------------------------------------------------------------
-# Function to check the installation of packages that provide required commands
+# Checks the installation of packages that provide required commands
 # Parameters:
 # $@ - All the arguments, which should be the names of the commands to check.
 function check_required_command {
@@ -148,7 +148,7 @@ function check_required_command {
   done
 }
 
-# Function to prompt the user for input.
+# Prompt the user for input.
 # If the user doesn't provide a value, the default value is assigned.
 # Parameters:
 # $1 - The variable name (will be all caps)
