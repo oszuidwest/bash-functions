@@ -45,8 +45,8 @@ function check_rpi_model() {
     exit 1
   fi
 
-  # Read the Raspberry Pi model from the system file
-  local model=$(cat /proc/device-tree/model)
+  # Read the Raspberry Pi model from the system file and remove null byte
+  local model=$(tr -d '\0' < /proc/device-tree/model)
 
   # Extract the main model number
   local detected_model_number
