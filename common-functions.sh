@@ -42,7 +42,7 @@ function check_rpi_model() {
   # Check if the first argument is a number
   if ! [[ $1 =~ ^[0-9]+$ ]]; then
     echo -e "${RED}Error: the argument provided is not a number. Please enter a Raspberry Pi model number.${NC}"
-    return 1
+    exit 1
   fi
 
   # Read the Raspberry Pi model from the system file and remove null byte
@@ -56,7 +56,7 @@ function check_rpi_model() {
     detected_model_number=1
   else
     echo -e "${RED}** NOT RUNNING ON A RECOGNIZED RASPBERRY PI MODEL **${NC}"
-    return 1
+    exit 1
   fi
 
   # Check if the Raspberry Pi model number is less than the minimum required
