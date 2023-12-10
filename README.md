@@ -21,9 +21,10 @@ This is a Bash shell library that provides a set of common utility functions to 
 These functions can be imported and used in your own Bash scripts. To import the functions, use the following line in your script:
 
 ```bash
-# Download the functions library
+# Remove old functions libraries and download the latest version
+rm -f /tmp/functions.sh
 if ! curl -s -o /tmp/functions.sh https://raw.githubusercontent.com/oszuidwest/bash-functions/main/common-functions.sh; then
-  echo -e  "*** Failed to download functions library. Please check your network connection! ***"
+  echo -e "*** Failed to download functions library. Please check your network connection! ***"
   exit 1
 fi
 
