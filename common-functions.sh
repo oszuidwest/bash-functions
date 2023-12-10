@@ -45,10 +45,8 @@ function check_rpi_model() {
     exit 1
   fi
 
-  # Read the Raspberry Pi model from the system file and remove null byte
   local model=$(tr -d '\0' < /proc/device-tree/model)
 
-  # Extract the main model number
   local detected_model_number
   if [[ $model =~ Raspberry\ Pi\ ([0-9]+) ]]; then
     detected_model_number=${BASH_REMATCH[1]}
@@ -59,7 +57,6 @@ function check_rpi_model() {
     exit 1
   fi
 
-  # Check if the Raspberry Pi model number is less than the minimum required
   if ((detected_model_number < $1)); then
     echo -e "${RED}** NOT RUNNING ON A RASPBERRY PI $1 OR HIGHER **${NC}"
     echo -e "${YELLOW}This script is only tested on a Raspberry Pi $1 or higher. Press Enter to continue anyway...${NC}"
