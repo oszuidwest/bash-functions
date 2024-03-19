@@ -4,7 +4,7 @@ function set_colors() {
     GREEN='\033[1;32m'
     RED='\033[1;31m'
     YELLOW='\033[0;33m'
-    BLUE='\033[1;34m'
+    BLUE='\033[1;36m'
     NC='\033[0m'
     BOLD='\033[1m'
     UNDERLINE='\033[4m'
