@@ -104,13 +104,17 @@ function update_os() {
 # $1 - (Optional) The first argument, which should be "silent" to suppress output.
 # $@ - All the arguments, which should be the names of packages to install.
 function install_packages() {
-    is_silent $1 && output_redirection='> /dev/null 2>&1' || output_redirection=''
+    if is_silent $1; then
+        output_redirection='> /dev/null 2>&1'
+        shift
+    else
+        output_redirection=''
+    fi
+    
     check_apt
-
-    shift
     echo -e "${BLUE}►► Installing dependencies...${NC}"
+    eval "apt -qq -y update ${output_redirection}"
     for package in "$@"; do
-        eval "apt -qq -y update ${output_redirection}"
         eval "apt -qq -y install ${package} ${output_redirection}"
     done
 }
