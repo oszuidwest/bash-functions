@@ -64,14 +64,14 @@ function check_rpi_model() {
 }
 
 # Check user privileges
-# Takes one parameter: "privileged" to check if the user is root, "non-privileged" to check if the user is not root.
+# Takes one parameter: "privileged" to check if the user is root, "regular" to check if the user is not root.
 function check_user_privileges() {
   local required_privilege="$1"
   
   if [[ "$required_privilege" == "privileged" && "$(id -u)" -ne 0 ]]; then
     echo -e "\e[31mError: this script must be run as root. Please run 'sudo su' first.\e[0m"
     exit 1
-  elif [[ "$required_privilege" == "non-privileged" && "$(id -u)" -eq 0 ]]; then
+  elif [[ "$required_privilege" == "regular" && "$(id -u)" -eq 0 ]]; then
     echo -e "\e[31mError: this script must not be run as root. Please run as a regular user.\e[0m"
     exit 1
   fi
