@@ -4,11 +4,11 @@ This is a Bash shell library that provides a set of common utility functions to 
 ## Function definitions
 
 1. `set_colors`: Initializes color and text variables for terminal text.
-2. `is_silent`: Checks if the first argument is 'silent'. If it is, output from commands can be suppressed.
+2. `is_silent`: Checks if the first parameter is 'silent'. If it is, output from commands can be suppressed.
 3. `is_this_linux`: Checks if the script is running on a Linux distribution.
 4. `is_this_os_64bit`: Checks if the system is a 64-bit system.
 5. `check_rpi_model`: Checks if the script is running on a Raspberry Pi with a model number equal to or higher than the input parameter.
-6. `are_we_root`: Checks if the script is running as root.
+6. `check_user_privileges`: Checks if the script is running with the required privileges. Takes one parameter: "privileged" to check if the user is root, "regular" to check if the user is not root.
 7. `check_apt`: Checks if the 'apt' package manager is present.
 8. `update_os`: Updates the operating system using the 'apt' package manager.
 9. `install_packages`: Installs packages using the 'apt' package manager. 
