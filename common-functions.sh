@@ -98,9 +98,9 @@ function update_os() {
         echo -e "${BLUE}►► Updating all OS packages...${NC}"
         output_redirection=""
     fi
-    eval "apt -qq -y update $output_redirection"
-    eval "apt -qq -y full-upgrade $output_redirection"
-    eval "apt -qq -y autoremove $output_redirection"
+    eval "sudo apt -qq -y update $output_redirection"
+    eval "sudo apt -qq -y full-upgrade $output_redirection"
+    eval "sudo apt -qq -y autoremove $output_redirection"
 }
 
 # Installs packages using 'apt' package manager.
@@ -117,9 +117,9 @@ function install_packages() {
     
     check_apt
     echo -e "${BLUE}►► Installing dependencies...${NC}"
-    eval "apt -qq -y update ${output_redirection}"
+    eval "sudo apt -qq -y update ${output_redirection}"
     for package in "$@"; do
-        eval "apt -qq -y install ${package} ${output_redirection}"
+        eval "sudo apt -qq -y install ${package} ${output_redirection}"
     done
 }
 
@@ -130,8 +130,8 @@ function set_timezone() {
     local timezone=$1
     if [ -f "/usr/share/zoneinfo/${timezone}" ]; then
         echo -e "${BLUE}►► Setting timezone to ${timezone}...${NC}"
-        ln -fs /usr/share/zoneinfo/$timezone /etc/localtime > /dev/null
-        dpkg-reconfigure -f noninteractive tzdata > /dev/null
+        sudo ln -fs /usr/share/zoneinfo/$timezone /etc/localtime > /dev/null
+        sudo dpkg-reconfigure -f noninteractive tzdata > /dev/null
     else
         echo -e "${RED} Error: Invalid timezone: ${timezone}${NC}"
     fi
