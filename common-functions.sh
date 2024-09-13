@@ -10,6 +10,18 @@ function set_colors() {
     UNDERLINE='\033[4m'
 }
 
+# Function to backup a file if it exists
+# Parameters:
+# $1 - The path to the file to backup
+function backup_file() {
+    local file="$1"
+    if [ -f "$file" ]; then
+        local backup_path="${file}.bak.$(date +%Y%m%d%H%M%S)"
+        cp "$file" "$backup_path"
+        echo -e "${YELLOW}Backup of '$file' created at '$backup_path'.${NC}"
+    fi
+}
+
 # Checks if the first argument is 'silent'.
 # Parameters:
 # $1 - The first argument, which should be "silent" to suppress output.
@@ -91,7 +103,7 @@ function check_apt() {
 # $1 - (Optional) The first argument, which should be "silent" to suppress output.
 function update_os() {
     check_apt
-    if is_silent $1; then
+    if is_silent "$1"; then
         echo -e "${BLUE}►► Updating all OS packages in silent mode...${NC}"
         output_redirection="> /dev/null 2>&1"
     else
@@ -108,7 +120,7 @@ function update_os() {
 # $1 - (Optional) The first argument, which should be "silent" to suppress output.
 # $@ - All the arguments, which should be the names of packages to install.
 function install_packages() {
-    if is_silent $1; then
+    if is_silent "$1"; then
         output_redirection='> /dev/null 2>&1'
         shift
     else

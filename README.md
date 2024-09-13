@@ -1,24 +1,25 @@
 # bash-functions
 This is a Bash shell library that provides a set of common utility functions to ease and streamline the scripting process in Debian-like environments.
 
-## Function definitions
+## Function Definitions
 
-1. `set_colors`: Initializes color and text variables for terminal text.
-2. `is_silent`: Checks if the first parameter is 'silent'. If it is, output from commands can be suppressed.
-3. `is_this_linux`: Checks if the script is running on a Linux distribution.
-4. `is_this_os_64bit`: Checks if the system is a 64-bit system.
-5. `check_rpi_model`: Checks if the script is running on a Raspberry Pi with a model number equal to or higher than the input parameter.
-6. `check_user_privileges`: Checks if the script is running with the required privileges. Takes one parameter: "privileged" to check if the user is root, "regular" to check if the user is not root.
-7. `check_apt`: Checks if the 'apt' package manager is present.
-8. `update_os`: Updates the operating system using the 'apt' package manager.
-9. `install_packages`: Installs packages using the 'apt' package manager. 
-10. `set_timezone`: Sets the system timezone.
-11. `check_required_command`: Checks if the system has specific commands installed. (WIP)
-12. `ask_user`: Prompts the user for input with different input types including 'y/n', 'num', 'str', 'email' and 'host'.
+1. **`set_colors`**: Initializes color and text variables for terminal text.
+2. **`is_silent`**: Checks if the first parameter is `'silent'`. If it is, output from commands can be suppressed.
+3. **`is_this_linux`**: Checks if the script is running on a Linux distribution.
+4. **`is_this_os_64bit`**: Checks if the system is a 64-bit system.
+5. **`check_rpi_model`**: Checks if the script is running on a Raspberry Pi with a model number equal to or higher than the input parameter.
+6. **`check_user_privileges`**: Checks if the script is running with the required privileges. Takes one parameter: `"privileged"` to check if the user is root, `"regular"` to check if the user is not root.
+7. **`check_apt`**: Checks if the `'apt'` package manager is present.
+8. **`update_os`**: Updates the operating system using the `'apt'` package manager.
+9. **`install_packages`**: Installs packages using the `'apt'` package manager.
+10. **`set_timezone`**: Sets the system timezone.
+11. **`check_required_command`**: Checks if the system has specific commands installed. *(WIP)*
+12. **`ask_user`**: Prompts the user for input with different input types including `'y/n'`, `'num'`, `'str'`, `'email'`, and `'host'`.
+13. **`backup_file`**: Backs up a specified file if it exists. Creates a timestamped backup to preserve the original before modifications.
 
 ## How to Use
 
-These functions can be imported and used in your own Bash scripts. To import the functions, use the following line in your script:
+These functions can be imported and used in your own Bash scripts. To import the functions, use the following lines in your script:
 
 ```bash
 # Remove old functions libraries and download the latest version
