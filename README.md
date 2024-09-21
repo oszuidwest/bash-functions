@@ -1,4 +1,5 @@
 # bash-functions
+
 This is a Bash shell library that provides a set of common utility functions to ease and streamline the scripting process in Debian-like environments.
 
 ## Function Definitions
@@ -13,7 +14,7 @@ This is a Bash shell library that provides a set of common utility functions to 
 8. **`update_os`**: Updates the operating system using the `'apt'` package manager.
 9. **`install_packages`**: Installs packages using the `'apt'` package manager.
 10. **`set_timezone`**: Sets the system timezone.
-11. **`check_required_command`**: Checks if the system has specific commands installed. *(WIP)*
+11. **`require_tool`**: Checks if the system has specific commands/tools installed. Can check for one or more tools.
 12. **`ask_user`**: Prompts the user for input with different input types including `'y/n'`, `'num'`, `'str'`, `'email'`, and `'host'`.
 13. **`backup_file`**: Backs up a specified file if it exists. Creates a timestamped backup to preserve the original before modifications.
 
@@ -39,6 +40,11 @@ And use it like this:
 # Example
 set_colors
 echo -e "${GREEN}This text is green!${NC}"
+```
+
+To check for required tools:
+```bash
+require_tool git curl wget
 ```
 
 Or this to ask the user for input, set a default (n) and validate the input (it should be y or n)

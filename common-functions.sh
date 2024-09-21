@@ -79,7 +79,7 @@ function check_rpi_model() {
 # Takes one parameter: "privileged" to check if the user is root, "regular" to check if the user is not root.
 function check_user_privileges() {
   local required_privilege="$1"
-  
+
   if [[ "$required_privilege" == "privileged" && "$(id -u)" -ne 0 ]]; then
     echo -e "\e[31mError: this script must be run as root. Please run 'sudo su' first.\e[0m"
     exit 1
@@ -126,7 +126,7 @@ function install_packages() {
     else
         output_redirection=''
     fi
-    
+
     check_apt
     echo -e "${BLUE}►► Installing dependencies...${NC}"
     eval "sudo apt -qq -y update ${output_redirection}"
@@ -149,19 +149,21 @@ function set_timezone() {
     fi
 }
 
-# -----------------------------------------------------------------
-# @ TODO: REFACTOR THIS TO A MANDATORY COMMAND OR FILE FUNCTION
-# -----------------------------------------------------------------
-# Checks the installation of packages that provide required commands
+# Check for one or more required tools, or exit
 # Parameters:
-# $@ - All the arguments, which should be the names of the commands to check.
-function check_required_command {
-  for cmd in "$@"; do
-    if ! command -v "$cmd" &> /dev/null; then
-      echo -e "${RED} Error: Installation failed. $cmd is not successfully installed.${NC}"
-      INSTALL_FAILED=true
+# $@ - The names of the commands/tools to check for
+function require_tool() {
+    local missing_tools=()
+    for tool in "$@"; do
+        if ! command -v "$tool" > /dev/null 2>&1; then
+            missing_tools+=("$tool")
+        fi
+    done
+
+    if [ ${#missing_tools[@]} -ne 0 ]; then
+        echo -e "${RED}Error: Could not locate the following required tools: ${missing_tools[*]}. Please install them on your system.${NC}"
+        exit 1
     fi
-  done
 }
 
 # Prompt the user for input.
