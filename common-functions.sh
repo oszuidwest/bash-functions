@@ -154,14 +154,27 @@ function set_timezone() {
 # $@ - The names of the commands/tools to check for
 function require_tool() {
     local missing_tools=()
+    
+    # Check each tool
     for tool in "$@"; do
         if ! command -v "$tool" > /dev/null 2>&1; then
             missing_tools+=("$tool")
         fi
     done
-
+    
+    # If tools are missing, show appropriate message based on count
     if [ ${#missing_tools[@]} -ne 0 ]; then
-        echo -e "${RED}Error: Could not locate the following required tools: ${missing_tools[*]}. Please install them on your system.${NC}"
+        echo -e "${RED}Error: Required tool(s) missing!${NC}\n"
+        
+        if [ ${#missing_tools[@]} -eq 1 ]; then
+            echo -e "The following tool is not installed:${YELLOW}"
+            echo "→ ${missing_tools[0]}"
+        else
+            echo -e "The following tools are not installed:${YELLOW}"
+            for tool in "${missing_tools[@]}"; do
+                echo "→ $tool"
+            done
+        fi
         exit 1
     fi
 }
