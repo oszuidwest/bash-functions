@@ -175,6 +175,8 @@ function require_tool() {
                 echo "→ $tool"
             done
         fi
+        
+        echo -e "${NC}"
         exit 1
     fi
 }
