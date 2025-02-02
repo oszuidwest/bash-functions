@@ -122,6 +122,7 @@ function update_os() {
 function install_packages() {
     if is_silent "$1"; then
         output_redirection='> /dev/null 2>&1'
+        export DEBIAN_FRONTEND="noninteractive"
         shift
     else
         output_redirection=''
@@ -129,6 +130,7 @@ function install_packages() {
 
     check_apt
     echo -e "${BLUE}►► Installing dependencies...${NC}"
+    
     eval "sudo apt -qq -y update ${output_redirection}"
     for package in "$@"; do
         eval "sudo apt -qq -y install ${package} ${output_redirection}"
