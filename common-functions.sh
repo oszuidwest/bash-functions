@@ -123,6 +123,7 @@ function install_packages() {
     if is_silent "$1"; then
         output_redirection='> /dev/null 2>&1'
         export DEBIAN_FRONTEND="noninteractive"
+        export DEBCONF_NONINTERACTIVE_SEEN=true
         shift
     else
         output_redirection=''
