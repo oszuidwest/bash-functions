@@ -120,21 +120,23 @@ function update_os() {
 # $1 - (Optional) The first argument, which should be "silent" to suppress output.
 # $@ - All the arguments, which should be the names of packages to install.
 function install_packages() {
+    local redirect=""
+    local apt_opts="-y"
+    
     if is_silent "$1"; then
-        output_redirection='> /dev/null 2>&1'
         export DEBIAN_FRONTEND="noninteractive"
         export DEBCONF_NONINTERACTIVE_SEEN=true
+        redirect="> /dev/null 2>&1"
+        apt_opts+=" -o Dpkg::Options::=\"--force-confdef\" -o Dpkg::Options::=\"--force-confold\""
         shift
-    else
-        output_redirection=''
     fi
 
     check_apt
     echo -e "${BLUE}►► Installing dependencies...${NC}"
     
-    eval "sudo apt -qq -y update ${output_redirection}"
+    eval "sudo -E apt-get update ${redirect}"
     for package in "$@"; do
-        eval "sudo apt -qq -y install ${package} ${output_redirection}"
+        eval "sudo -E apt-get install ${apt_opts} ${package} ${redirect}"
     done
 }
 
