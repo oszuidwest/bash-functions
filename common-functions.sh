@@ -252,3 +252,84 @@ function ask_user {
 
   eval "$var_name=\"$input\""
 }
+
+# Downloads one or more files using curl with error handling and optional backup
+# Usage:
+#   Single file: download_file URL DEST DESCRIPTION [backup]
+#   Multiple files: download_file -m DEST_DIR DESCRIPTION [backup] URL1:FILENAME1 URL2:FILENAME2 ...
+# 
+# Examples:
+#   # Single file without backup
+#   download_file "http://example.com/file.txt" "/tmp/file.txt" "configuration file"
+#   
+#   # Single file with backup
+#   download_file "http://example.com/file.txt" "/tmp/file.txt" "configuration file" backup
+#   
+#   # Multiple files without backup
+#   download_file -m "/tmp" "library files" \
+#     "http://example.com/file1.txt:file1.txt" \
+#     "http://example.com/file2.txt:file2.txt"
+#   
+#   # Multiple files with backup
+#   download_file -m "/tmp" "library files" backup \
+#     "http://example.com/file1.txt:file1.txt" \
+#     "http://example.com/file2.txt:file2.txt"
+function download_file() {
+  local multi_mode=false
+  local dest dest_dir description backup_option=""
+  local failed=0
+  
+  # Check for multi-file mode
+  if [[ "$1" == "-m" ]]; then
+    multi_mode=true
+    shift
+    dest_dir="$1"
+    description="$2"
+    shift 2
+    
+    # Check for backup option
+    if [[ "$1" == "backup" ]]; then
+      backup_option="backup"
+      shift
+    fi
+    
+    # Download each file
+    for url_file in "$@"; do
+      # Use a more reliable method to split URL and filename
+      # Find the last colon that's not part of http:// or https://
+      local filename="${url_file##*:}"
+      local url="${url_file%:${filename}}"
+      local file_dest="${dest_dir}/${filename}"
+      
+      # Backup if requested
+      if [[ "$backup_option" == "backup" ]]; then
+        backup_file "${file_dest}"
+      fi
+      
+      # Download
+      if ! curl -sLo "${file_dest}" "${url}"; then
+        echo -e "${RED}Error: Unable to download ${description} - ${filename}.${NC}"
+        failed=1
+      fi
+    done
+  else
+    # Single file mode
+    local url="$1"
+    dest="$2"
+    description="$3"
+    backup_option="${4:-}"
+    
+    # Backup if requested
+    if [[ "$backup_option" == "backup" ]]; then
+      backup_file "${dest}"
+    fi
+    
+    # Download
+    if ! curl -sLo "${dest}" "${url}"; then
+      echo -e "${RED}Error: Unable to download ${description}.${NC}"
+      return 1
+    fi
+  fi
+  
+  return $failed
+}

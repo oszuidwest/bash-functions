@@ -2,21 +2,215 @@
 
 This is a Bash shell library that provides a set of common utility functions to ease and streamline the scripting process in Debian-like environments.
 
-## Function Definitions
+## Function Reference
 
-1. **`set_colors`**: Initializes color and text variables for terminal text.
-2. **`is_silent`**: Checks if the first parameter is `'silent'`. If it is, output from commands can be suppressed.
-3. **`is_this_linux`**: Checks if the script is running on a Linux distribution.
-4. **`is_this_os_64bit`**: Checks if the system is a 64-bit system.
-5. **`check_rpi_model`**: Checks if the script is running on a Raspberry Pi with a model number equal to or higher than the input parameter.
-6. **`check_user_privileges`**: Checks if the script is running with the required privileges. Takes one parameter: `"privileged"` to check if the user is root, `"regular"` to check if the user is not root.
-7. **`check_apt`**: Checks if the `'apt'` package manager is present.
-8. **`update_os`**: Updates the operating system using the `'apt'` package manager.
-9. **`install_packages`**: Installs packages using the `'apt'` package manager.
-10. **`set_timezone`**: Sets the system timezone.
-11. **`require_tool`**: Checks if the system has specific commands/tools installed. Can check for one or more tools.
-12. **`ask_user`**: Prompts the user for input with different input types including `'y/n'`, `'num'`, `'str'`, `'email'`, and `'host'`.
-13. **`backup_file`**: Backs up a specified file if it exists. Creates a timestamped backup to preserve the original before modifications.
+### 1. `set_colors`
+Initializes color variables for terminal text formatting.
+
+**Parameters:** None
+
+**Example:**
+```bash
+set_colors
+echo -e "${GREEN}Success!${NC}"
+```
+
+**Available colors:** GREEN, RED, YELLOW, BLUE, NC (No Color), BOLD, UNDERLINE
+
+---
+
+### 2. `backup_file`
+Creates a timestamped backup of a file if it exists.
+
+**Parameters:**
+- `$1` - The path to the file to backup
+
+**Example:**
+```bash
+backup_file "/etc/config.conf"
+# Creates: /etc/config.conf.bak.20240206123045
+```
+
+---
+
+### 3. `is_silent`
+Checks if the first parameter is 'silent' to determine if output should be suppressed.
+
+**Parameters:**
+- `$1` - (Optional) Pass "silent" to return true
+
+**Returns:** 0 if silent, 1 otherwise
+
+**Example:**
+```bash
+if is_silent "$1"; then
+    echo "Running in silent mode"
+fi
+```
+
+---
+
+### 4. `is_this_linux`
+Verifies that the script is running on a Linux distribution.
+
+**Parameters:** None
+
+**Exits:** With code 1 if not running on Linux
+
+---
+
+### 5. `is_this_os_64bit`
+Verifies that the system is running a 64-bit operating system.
+
+**Parameters:** None
+
+**Exits:** With code 1 if not 64-bit
+
+---
+
+### 6. `check_rpi_model`
+Checks if running on a Raspberry Pi and verifies minimum model requirement.
+
+**Parameters:**
+- `$1` - The minimal Raspberry Pi model number required
+
+**Example:**
+```bash
+check_rpi_model 4  # Requires Raspberry Pi 4 or higher
+```
+
+---
+
+### 7. `check_user_privileges`
+Verifies that the script is running with the correct user privileges.
+
+**Parameters:**
+- `$1` - Either "privileged" (must be root) or "regular" (must not be root)
+
+**Example:**
+```bash
+check_user_privileges "privileged"  # Requires root
+check_user_privileges "regular"     # Requires non-root
+```
+
+---
+
+### 8. `check_apt`
+Verifies that the 'apt' package manager is available.
+
+**Parameters:** None
+
+**Exits:** With code 1 if apt is not installed
+
+---
+
+### 9. `update_os`
+Updates the operating system using apt package manager.
+
+**Parameters:**
+- `$1` - (Optional) Pass "silent" to suppress output
+
+**Example:**
+```bash
+update_os          # Verbose mode
+update_os silent   # Silent mode
+```
+
+---
+
+### 10. `install_packages`
+Installs one or more packages using apt package manager.
+
+**Parameters:**
+- `$1` - (Optional) Pass "silent" as first argument to suppress output
+- `$@` - Package names to install
+
+**Example:**
+```bash
+install_packages nginx mysql-server php
+install_packages silent nginx mysql-server php
+```
+
+---
+
+### 11. `set_timezone`
+Sets the system timezone.
+
+**Parameters:**
+- `$1` - Valid timezone (e.g., "Europe/Amsterdam")
+
+**Example:**
+```bash
+set_timezone "Europe/Amsterdam"
+set_timezone "America/New_York"
+```
+
+---
+
+### 12. `require_tool`
+Checks for required tools and exits if any are missing.
+
+**Parameters:**
+- `$@` - Names of commands/tools to check for
+
+**Example:**
+```bash
+require_tool git curl wget
+```
+
+---
+
+### 13. `ask_user`
+Prompts the user for input with validation and default values.
+
+**Parameters:**
+- `$1` - Variable name to store the result
+- `$2` - Default value if user presses Enter
+- `$3` - Prompt message to display
+- `$4` - (Optional) Validation type: "y/n", "num", "str", "email", or "host" (default: "str")
+
+**Example:**
+```bash
+ask_user "USERNAME" "admin" "Enter username" "str"
+ask_user "PORT" "8080" "Enter port number" "num"
+ask_user "ENABLE_SSL" "y" "Enable SSL?" "y/n"
+ask_user "EMAIL" "admin@example.com" "Enter email" "email"
+ask_user "HOSTNAME" "server.local" "Enter hostname" "host"
+```
+
+---
+
+### 14. `download_file`
+Downloads files using curl with error handling and optional backup.
+
+**Single file mode:**
+```bash
+download_file URL DEST DESCRIPTION [backup]
+```
+
+**Multi-file mode:**
+```bash
+download_file -m DEST_DIR DESCRIPTION [backup] URL1:FILENAME1 URL2:FILENAME2
+```
+
+**Examples:**
+```bash
+# Single file
+download_file "http://example.com/config.txt" "/etc/app/config.txt" "config file"
+
+# Single file with backup
+download_file "http://example.com/config.txt" "/etc/app/config.txt" "config file" backup
+
+# Multiple files
+download_file -m "/opt/app" "library files" \
+  "http://example.com/lib1.so:lib1.so" \
+  "http://example.com/lib2.so:lib2.so"
+
+# Multiple files with backup
+download_file -m "/opt/app" "library files" backup \
+  "http://example.com/lib1.so:lib1.so" \
+  "http://example.com/lib2.so:lib2.so"
+```
 
 ## How to Use
 
