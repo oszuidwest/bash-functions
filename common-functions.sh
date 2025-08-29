@@ -105,14 +105,18 @@ function update_os() {
     check_apt
     if is_silent "$1"; then
         echo -e "${BLUE}►► Updating all OS packages in silent mode...${NC}"
-        output_redirection="> /dev/null 2>&1"
+        export DEBIAN_FRONTEND="noninteractive"
+        export DEBCONF_NONINTERACTIVE_SEEN=true
+        local apt_opts="-qq -y -o Dpkg::Options::=\"--force-confdef\" -o Dpkg::Options::=\"--force-confold\""
+        local output_redirection="> /dev/null 2>&1"
     else
         echo -e "${BLUE}►► Updating all OS packages...${NC}"
-        output_redirection=""
+        local apt_opts="-qq -y"
+        local output_redirection=""
     fi
-    eval "sudo apt -qq -y update $output_redirection"
-    eval "sudo apt -qq -y full-upgrade $output_redirection"
-    eval "sudo apt -qq -y autoremove $output_redirection"
+    eval "sudo -E apt ${apt_opts} update ${output_redirection}"
+    eval "sudo -E apt ${apt_opts} full-upgrade ${output_redirection}"
+    eval "sudo -E apt ${apt_opts} autoremove ${output_redirection}"
 }
 
 # Installs packages using 'apt' package manager.
