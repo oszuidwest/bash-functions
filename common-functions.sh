@@ -222,6 +222,54 @@ function require_tool() {
     fi
 }
 
+# Validate input based on type
+# Parameters:
+# $1 - The input value to validate
+# $2 - The type of the variable (y/n, num, str, email, host)
+# $3 - The name of the variable (used for error messages)
+function validate_input() {
+  local input="$1"
+  local var_type="$2"
+  local var_name="$3"
+
+    case $var_type in
+      'y/n')
+        if ! [[ "$input" =~ ^(y|n)$ ]]; then
+          echo "Invalid value for $var_name. Expected 'y' or 'n'."
+          return 1
+        fi
+        ;;
+      'num')
+        if ! [[ "$input" =~ ^[0-9]+$ ]]; then
+          echo "Invalid value for $var_name. Expected a number."
+          return 1
+        fi
+        ;;
+      'str')
+        if [[ -z "$input" ]]; then
+          echo "Invalid value for $var_name. Expected a non-empty string."
+          return 1
+        fi
+        ;;
+      'email')
+        if ! [[ "$input" =~ ^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]]; then
+          echo "Invalid value for $var_name. Expected a valid email address."
+          return 1
+        fi
+        ;;
+      'host')
+        if ! [[ "$input" =~ ^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][a-zA-Z0-9\-]*[A-Za-z0-9])$ ]]; then
+          echo "Invalid value for $var_name. Expected a valid hostname."
+          return 1
+        fi
+        ;;
+      *)
+        echo "Unknown validation type: $var_type"
+        return 1
+        ;;
+    esac
+}
+
 # Prompt the user for input.
 # If the user doesn't provide a value, the default value is assigned.
 # Parameters:
@@ -239,53 +287,23 @@ function ask_user {
 
   local input
 
-  while true; do
-    read -p "${prompt} [default: ${default_value}]: " input
-    input="${input:-$default_value}"
-
-    case $var_type in
-      'y/n')
-        if [[ "$input" =~ ^(y|n)$ ]]; then
-          break
-        else
-          echo "Invalid input. Please enter y or n."
-        fi
-        ;;
-      'num')
-        if [[ "$input" =~ ^[0-9]+$ ]]; then
-          break
-        else
-          echo "Invalid input. Please enter a number."
-        fi
-        ;;
-      'str')
-        if [[ -n "$input" ]]; then
-          break
-        else
-          echo "Invalid input. Please enter a string."
-        fi
-        ;;
-      'email')
-        if [[ "$input" =~ ^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]]; then
-          break
-        else
-          echo "Invalid input. Please enter a valid e-mail address."
-        fi
-        ;;
-      'host')
-        if [[ "$input" =~ ^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$ ]]; then
-          break
-        else
-          echo "Invalid input. Please enter a valid hostname."
-        fi
-        ;;  
-      *)
-        echo "Unknown validation type: $var_type"
-        return 1
-        ;;
-    esac
-  done
-
+  # Check if the environment variable is already set and validate
+  if [[ -n "${!var_name}" ]]; then
+    input="${!var_name}"
+    if ! validate_input "$input" "$var_type" "$var_name"; then
+        echo "Error: Invalid value for $var_name. Exiting script."
+        exit 1
+    fi
+  else
+    while true; do
+      read -p "${prompt} [default: ${default_value}]: " input
+      input="${input:-$default_value}"
+      if validate_input "$input" "$var_type" "$var_name"; then
+        break
+      fi
+    done
+  fi
+  
   eval "$var_name=\"$input\""
 }
 
