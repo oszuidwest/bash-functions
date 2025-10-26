@@ -160,8 +160,35 @@ require_tool git curl wget
 
 ---
 
-### 13. `ask_user`
-Prompts the user for input with validation and default values.
+### 13. `validate_input`
+Validates input based on a specified type.
+
+**Parameters:**
+- `$1` - The input value to validate
+- `$2` - The type of the variable: "y/n", "num", "str", "email", or "host"
+- `$3` - The name of the variable (used for error messages)
+
+**Returns:** 0 if the input is valid, 1 otherwise.
+
+**Example:**
+```bash
+if validate_input "yes" "y/n" "CONFIRMATION"; then
+    echo "Valid input"
+else
+    echo "Invalid input"
+fi
+```
+
+---
+
+### 14. `ask_user`
+Prompts the user for input with validation and default values. The function follows two paths:
+
+1. **Environment Variable Path**: If an environment variable with the same name as the variable is set, its value is used directly. The value is validated, and if it is invalid, the script exits immediately with an error message.
+
+2. **User Input Path**: If no environment variable is set, the user is prompted for input. The function re-asks the question until valid input is provided.
+
+This ensures that the script can operate non-interactively when environment variables are pre-set, while still enforcing validation.
 
 **Parameters:**
 - `$1` - Variable name to store the result
