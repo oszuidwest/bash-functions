@@ -288,7 +288,7 @@ function ask_user {
   local input
 
   # Check if the environment variable is already set and validate
-  if [[ -n "${!var_name}" ]]; then
+  if [[ -n "${!var_name:-}" ]]; then
     input="${!var_name}"
     if ! validate_input "$input" "$var_type" "$var_name"; then
         echo "Error: Invalid value for $var_name. Exiting script."
