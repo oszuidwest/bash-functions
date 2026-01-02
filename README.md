@@ -2,21 +2,36 @@
 
 A Bash shell library providing common utility functions for Debian-like environments.
 
-## Breaking Changes from v1
+## Naming Conventions
 
-If upgrading from v1, update your scripts:
+| Prefix | Behavior | Example |
+|--------|----------|---------|
+| `assert_*` | Exit on failure | `assert_os_linux` |
+| `is_*` | Return 0/1 (predicate) | `is_valid` |
+| `get_*` | Echo a value | `get_sudo` |
+| `set_*` | Modify state | `set_timezone` |
+| `prompt_*` | Interactive input | `prompt_user` |
+| `apt_*` | Package management | `apt_install` |
+| `file_*` | File operations | `file_download` |
+
+## Breaking Changes from v1
 
 | v1 | v2 |
 |----|-----|
-| `is_this_linux` | `check_linux` |
-| `is_this_os_64bit` | `check_os_64bit` |
-| `update_os silent` | `update_os --silent` |
-| `install_packages silent pkg1 pkg2` | `install_packages --silent pkg1 pkg2` |
-| `download_file URL DEST DESC backup` | `download_file URL DEST DESC --backup` |
-| `download_file -m DIR DESC "URL:file"` | `download_file -m DIR DESC "URL\|file"` |
-| `is_silent` function | Removed (internal only) |
-| `set_colors` must be called | Auto-initialized on source |
-| `backup_file` returns 0 on no-file | Returns 2 when file doesn't exist |
+| `is_this_linux` | `assert_os_linux` |
+| `is_this_os_64bit` | `assert_os_64bit` |
+| `check_user_privileges "privileged"` | `assert_user_privileged "root"` |
+| `check_user_privileges "regular"` | `assert_user_privileged "regular"` |
+| `check_apt` | `assert_tool apt` |
+| `require_tool git curl` | `assert_tool git curl` |
+| `check_rpi_model 4` | `assert_hw_rpi 4` |
+| `validate_input` | `is_valid` |
+| `ask_user` | `prompt_user` |
+| `get_sudo_if_needed` | `get_sudo` |
+| `update_os` | `apt_update` |
+| `install_packages` | `apt_install` |
+| `backup_file` | `file_backup` |
+| `download_file` | `file_download` |
 
 ## Installation
 
@@ -25,97 +40,99 @@ curl -s -o /tmp/functions.sh https://raw.githubusercontent.com/oszuidwest/bash-f
 source /tmp/functions.sh
 ```
 
-Colors are automatically initialized - no need to call `set_colors`.
+Colors are automatically initialized.
 
 ## Function Reference
 
-### System Checks
-
-All check functions exit with code 1 on failure.
+### Assertions (exit on failure)
 
 ```bash
-check_linux                        # Verify running on Linux
-check_os_64bit                     # Verify 64-bit OS
-check_apt                          # Verify apt is available
-check_user_privileges "privileged" # Require root
-check_user_privileges "regular"    # Require non-root
-check_rpi_model 4                  # Require Raspberry Pi 4+
-require_tool git curl wget         # Require tools installed
+assert_os_linux                    # Require Linux
+assert_os_64bit                    # Require 64-bit OS
+assert_tool apt curl git           # Require tools installed
+assert_user_privileged "root"      # Require root
+assert_user_privileged "regular"   # Require non-root
+assert_hw_rpi 4                    # Require Raspberry Pi 4+
 ```
 
-### Package Management
+### Predicates (return 0/1)
 
 ```bash
-update_os                          # Update all packages
-update_os --silent                 # Update silently
-
-install_packages nginx php mysql   # Install packages (batch)
-install_packages --silent nginx    # Install silently
+if is_valid "$value" "email" "EMAIL"; then
+    echo "Valid email"
+fi
 ```
 
-### File Operations
+Validation types: `y/n`, `num`, `str`, `email`, `host`
+
+### Getters
 
 ```bash
-# Backup (returns: 0=success, 1=failed, 2=file didn't exist)
-backup_file "/etc/config.conf"
-
-# Download single file
-download_file "https://example.com/file.txt" "/tmp/file.txt" "config"
-download_file "https://example.com/file.txt" "/tmp/file.txt" "config" --backup
-
-# Download multiple files (use | as delimiter for port support)
-download_file -m "/opt/app" "libs" \
-  "https://example.com:8080/lib1.so|lib1.so" \
-  "https://example.com:8080/lib2.so|lib2.so"
+local sudo_cmd=$(get_sudo)         # Returns "sudo" or ""
 ```
 
-Download features:
-- Automatic retries (3x with 5s delay)
-- Connection timeout (30s)
-- Max download time (5 min)
-- HTTP error detection
-
-### User Input
+### Prompts
 
 ```bash
-# Basic usage
-ask_user "USERNAME" "admin" "Enter username" "str"
-ask_user "PORT" "8080" "Enter port" "num"
-ask_user "ENABLE_SSL" "y" "Enable SSL?" "y/n"
-ask_user "EMAIL" "a@b.com" "Enter email" "email"
-ask_user "SERVER" "localhost" "Enter host" "host"  # accepts hostname or IP
+prompt_user "USERNAME" "admin" "Enter username" "str"
+prompt_user "PORT" "8080" "Enter port" "num"
+prompt_user "ENABLE_SSL" "y" "Enable SSL?" "y/n"
 ```
 
 For non-interactive usage, set environment variables:
 ```bash
 export USERNAME="myuser"
-export PORT="3000"
-./myscript.sh  # Will use env vars instead of prompting
+./myscript.sh  # Uses env var instead of prompting
 ```
 
-### Configuration
+### APT Package Management
+
+```bash
+apt_update                         # Update all packages
+apt_update --silent                # Update silently
+
+apt_install nginx php mysql        # Install packages
+apt_install --silent nginx         # Install silently
+```
+
+### Setters
 
 ```bash
 set_timezone "Europe/Amsterdam"
 ```
 
+### File Operations
+
+```bash
+# Backup (returns: 0=success, 1=failed, 2=no file)
+file_backup "/etc/config.conf"
+
+# Download single file
+file_download "https://example.com/f.txt" "/tmp/f.txt" "config"
+file_download "https://example.com/f.txt" "/tmp/f.txt" "config" --backup
+
+# Download multiple (use | delimiter for port support)
+file_download -m "/opt/app" "libs" \
+  "https://example.com:8080/lib1.so|lib1.so" \
+  "https://example.com:8080/lib2.so|lib2.so"
+```
+
 ### Colors
 
-Available after sourcing (auto-initialized):
-- `$GREEN`, `$RED`, `$YELLOW`, `$BLUE`
-- `$BOLD`, `$UNDERLINE`
-- `$NC` (reset)
-
+Available after sourcing:
 ```bash
 echo -e "${GREEN}Success!${NC}"
 echo -e "${RED}Error!${NC}"
+echo -e "${YELLOW}Warning${NC}"
+echo -e "${BLUE}Info${NC}"
+echo -e "${BOLD}Bold${NC}"
 ```
 
 ## Requirements
 
-- Bash 4.3+ (for `declare -n`)
+- Bash 4.3+
 - Debian-like system with apt
-- curl (for download_file)
+- curl (for file_download)
 
 ## License
 

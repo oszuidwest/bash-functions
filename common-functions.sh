@@ -1,6 +1,16 @@
 # shellcheck shell=bash
 # common-functions.sh - Utility functions for Debian/Linux environments
 # https://github.com/oszuidwest/bash-functions
+#
+# Naming conventions:
+#   assert_*  - Guards that exit on failure
+#   is_*      - Predicates that return 0/1
+#   get_*     - Getters that echo a value
+#   set_*     - Setters that modify state
+#   prompt_*  - Interactive user prompts
+#   apt_*     - Package management actions
+#   file_*    - File operations
+#   _*        - Internal helpers (not for external use)
 
 # =============================================================================
 # INTERNAL HELPERS
@@ -12,9 +22,9 @@ function _get_opt() {
     echo "${1:-}"
 }
 
-# Helper to check if --silent flag is present in arguments
-# Usage: if _has_flag "--silent" "$@"; then ...
-function _has_flag() {
+# Predicate: check if a flag is present in arguments
+# Usage: if _is_flag "--silent" "$@"; then ...
+function _is_flag() {
     local flag="$1"
     shift
     for arg in "$@"; do
@@ -23,9 +33,9 @@ function _has_flag() {
     return 1
 }
 
-# Helper to remove a flag from arguments and return the rest
-# Usage: local args=($(_remove_flag "--silent" "$@"))
-function _remove_flag() {
+# Transformer: remove a flag from arguments and echo the rest
+# Usage: local args=($(_strip_flag "--silent" "$@"))
+function _strip_flag() {
     local flag="$1"
     shift
     for arg in "$@"; do
@@ -54,13 +64,13 @@ function set_colors() {
 }
 
 # =============================================================================
-# SUDO HANDLING
+# GETTERS
 # =============================================================================
 
 # Returns the appropriate sudo command based on user privileges
 # Returns empty string if running as root, "sudo" if not
-# Usage: local sudo_cmd=$(get_sudo_if_needed)
-function get_sudo_if_needed() {
+# Usage: local sudo_cmd=$(get_sudo)
+function get_sudo() {
     if [[ "$(id -u)" -eq 0 ]]; then
         echo ""
     else
@@ -69,29 +79,74 @@ function get_sudo_if_needed() {
 }
 
 # =============================================================================
-# SYSTEM CHECKS (exit on failure)
+# ASSERTIONS (exit on failure)
 # =============================================================================
 
-# Checks if this is a Linux distribution. Exits on failure.
-function check_linux() {
+# Assert: running on Linux. Exits on failure.
+function assert_os_linux() {
     if [[ "$(uname -s)" != "Linux" ]]; then
         echo -e "${RED}Error: this script does not support '$(uname -s)' Operating System. Exiting.${NC}"
         exit 1
     fi
 }
 
-# Checks if this system is 64-bit. Exits on failure.
-function check_os_64bit() {
+# Assert: 64-bit operating system. Exits on failure.
+function assert_os_64bit() {
     if [[ $(getconf LONG_BIT) -ne 64 ]]; then
         echo -e "${RED}Error: 64-bit operating system required.${NC}"
         exit 1
     fi
 }
 
-# Checks if this is a Raspberry Pi with minimum model requirement.
+# Assert: user has required privileges. Exits on failure.
+# Parameters:
+# $1 - "root" to require root, "regular" to require non-root
+function assert_user_privileged() {
+    local required_privilege="$1"
+
+    if [[ "$required_privilege" == "root" && "$(id -u)" -ne 0 ]]; then
+        echo -e "${RED}Error: this script must be run as root. Please run 'sudo su' first.${NC}"
+        exit 1
+    elif [[ "$required_privilege" == "regular" && "$(id -u)" -eq 0 ]]; then
+        echo -e "${RED}Error: this script must not be run as root. Please run as a regular user.${NC}"
+        exit 1
+    fi
+}
+
+# Assert: required tools are available. Exits on failure.
+# Parameters:
+# $@ - The names of the commands/tools to check for
+function assert_tool() {
+    local missing_tools=()
+
+    for tool in "$@"; do
+        if ! command -v "$tool" > /dev/null 2>&1; then
+            missing_tools+=("$tool")
+        fi
+    done
+
+    if [[ ${#missing_tools[@]} -ne 0 ]]; then
+        echo -e "${RED}Error: Required tool(s) missing!${NC}\n"
+
+        if [[ ${#missing_tools[@]} -eq 1 ]]; then
+            echo -e "The following tool is not installed:${YELLOW}"
+            echo "→ ${missing_tools[0]}"
+        else
+            echo -e "The following tools are not installed:${YELLOW}"
+            for tool in "${missing_tools[@]}"; do
+                echo "→ $tool"
+            done
+        fi
+
+        echo -e "${NC}"
+        exit 1
+    fi
+}
+
+# Assert: Raspberry Pi with minimum model requirement. Exits on failure.
 # Parameters:
 # $1 - The minimal Raspberry Pi model required (number)
-function check_rpi_model() {
+function assert_hw_rpi() {
     if ! [[ $1 =~ ^[0-9]+$ ]]; then
         echo -e "${RED}Error: the argument provided is not a number. Please enter a Raspberry Pi model number.${NC}"
         exit 1
@@ -129,209 +184,17 @@ function check_rpi_model() {
     fi
 }
 
-# Check user privileges. Exits on failure.
-# Parameters:
-# $1 - "privileged" to require root, "regular" to require non-root
-function check_user_privileges() {
-    local required_privilege="$1"
-
-    if [[ "$required_privilege" == "privileged" && "$(id -u)" -ne 0 ]]; then
-        echo -e "${RED}Error: this script must be run as root. Please run 'sudo su' first.${NC}"
-        exit 1
-    elif [[ "$required_privilege" == "regular" && "$(id -u)" -eq 0 ]]; then
-        echo -e "${RED}Error: this script must not be run as root. Please run as a regular user.${NC}"
-        exit 1
-    fi
-}
-
-# Check if the 'apt' package manager is present. Exits on failure.
-function check_apt() {
-    if ! command -v apt > /dev/null 2>&1; then
-        echo -e "${RED}Error: apt is not installed. Exiting...${NC}"
-        exit 1
-    fi
-}
-
-# Check for one or more required tools. Exits on failure.
-# Parameters:
-# $@ - The names of the commands/tools to check for
-function require_tool() {
-    local missing_tools=()
-
-    for tool in "$@"; do
-        if ! command -v "$tool" > /dev/null 2>&1; then
-            missing_tools+=("$tool")
-        fi
-    done
-
-    if [[ ${#missing_tools[@]} -ne 0 ]]; then
-        echo -e "${RED}Error: Required tool(s) missing!${NC}\n"
-
-        if [[ ${#missing_tools[@]} -eq 1 ]]; then
-            echo -e "The following tool is not installed:${YELLOW}"
-            echo "→ ${missing_tools[0]}"
-        else
-            echo -e "The following tools are not installed:${YELLOW}"
-            for tool in "${missing_tools[@]}"; do
-                echo "→ $tool"
-            done
-        fi
-
-        echo -e "${NC}"
-        exit 1
-    fi
-}
-
 # =============================================================================
-# PACKAGE MANAGEMENT
+# PREDICATES (return 0/1)
 # =============================================================================
 
-# Update the OS using 'apt' package manager.
-# Parameters:
-# --silent - (Optional) Suppress output
-function update_os() {
-    check_apt
-
-    local silent=false
-    if _has_flag "--silent" "$@"; then
-        silent=true
-    fi
-
-    local sudo_cmd
-    sudo_cmd=$(get_sudo_if_needed)
-
-    # Save current env vars
-    local old_debian_frontend="${DEBIAN_FRONTEND:-}"
-    local old_debconf_seen="${DEBCONF_NONINTERACTIVE_SEEN:-}"
-
-    if [[ "$silent" == true ]]; then
-        echo -e "${BLUE}►► Updating all OS packages in silent mode...${NC}"
-        export DEBIAN_FRONTEND="noninteractive"
-        export DEBCONF_NONINTERACTIVE_SEEN=true
-
-        ${sudo_cmd:+$sudo_cmd} apt-get -qq -y \
-            -o Dpkg::Options::="--force-confdef" \
-            -o Dpkg::Options::="--force-confold" \
-            update > /dev/null 2>&1
-
-        ${sudo_cmd:+$sudo_cmd} apt-get -qq -y \
-            -o Dpkg::Options::="--force-confdef" \
-            -o Dpkg::Options::="--force-confold" \
-            full-upgrade > /dev/null 2>&1
-
-        ${sudo_cmd:+$sudo_cmd} apt-get -qq -y autoremove > /dev/null 2>&1
-    else
-        echo -e "${BLUE}►► Updating all OS packages...${NC}"
-        ${sudo_cmd:+$sudo_cmd} apt-get -qq -y update
-        ${sudo_cmd:+$sudo_cmd} apt-get -qq -y full-upgrade
-        ${sudo_cmd:+$sudo_cmd} apt-get -qq -y autoremove
-    fi
-
-    # Restore env vars
-    if [[ -n "$old_debian_frontend" ]]; then
-        export DEBIAN_FRONTEND="$old_debian_frontend"
-    else
-        unset DEBIAN_FRONTEND 2>/dev/null || true
-    fi
-    if [[ -n "$old_debconf_seen" ]]; then
-        export DEBCONF_NONINTERACTIVE_SEEN="$old_debconf_seen"
-    else
-        unset DEBCONF_NONINTERACTIVE_SEEN 2>/dev/null || true
-    fi
-}
-
-# Installs packages using 'apt' package manager.
-# Parameters:
-# --silent - (Optional) Suppress output
-# $@ - Package names to install
-function install_packages() {
-    local silent=false
-    local packages=()
-
-    # Parse arguments
-    for arg in "$@"; do
-        if [[ "$arg" == "--silent" ]]; then
-            silent=true
-        else
-            packages+=("$arg")
-        fi
-    done
-
-    if [[ ${#packages[@]} -eq 0 ]]; then
-        echo -e "${RED}Error: No packages specified.${NC}"
-        return 1
-    fi
-
-    check_apt
-
-    local sudo_cmd
-    sudo_cmd=$(get_sudo_if_needed)
-
-    # Save current env vars
-    local old_debian_frontend="${DEBIAN_FRONTEND:-}"
-    local old_debconf_seen="${DEBCONF_NONINTERACTIVE_SEEN:-}"
-
-    echo -e "${BLUE}►► Installing dependencies...${NC}"
-
-    if [[ "$silent" == true ]]; then
-        export DEBIAN_FRONTEND="noninteractive"
-        export DEBCONF_NONINTERACTIVE_SEEN=true
-
-        ${sudo_cmd:+$sudo_cmd} apt-get update > /dev/null 2>&1
-        ${sudo_cmd:+$sudo_cmd} apt-get install -y \
-            -o Dpkg::Options::="--force-confdef" \
-            -o Dpkg::Options::="--force-confold" \
-            "${packages[@]}" > /dev/null 2>&1
-    else
-        ${sudo_cmd:+$sudo_cmd} apt-get update
-        ${sudo_cmd:+$sudo_cmd} apt-get install -y "${packages[@]}"
-    fi
-
-    # Restore env vars
-    if [[ -n "$old_debian_frontend" ]]; then
-        export DEBIAN_FRONTEND="$old_debian_frontend"
-    else
-        unset DEBIAN_FRONTEND 2>/dev/null || true
-    fi
-    if [[ -n "$old_debconf_seen" ]]; then
-        export DEBCONF_NONINTERACTIVE_SEEN="$old_debconf_seen"
-    else
-        unset DEBCONF_NONINTERACTIVE_SEEN 2>/dev/null || true
-    fi
-}
-
-# =============================================================================
-# SYSTEM CONFIGURATION
-# =============================================================================
-
-# Set the system timezone.
-# Parameters:
-# $1 - A valid timezone, e.g. "Europe/Amsterdam"
-function set_timezone() {
-    local timezone="$1"
-    local sudo_cmd
-    sudo_cmd=$(get_sudo_if_needed)
-
-    if [[ -f "/usr/share/zoneinfo/${timezone}" ]]; then
-        echo -e "${BLUE}►► Setting timezone to ${timezone}...${NC}"
-        ${sudo_cmd:+$sudo_cmd} ln -fs "/usr/share/zoneinfo/$timezone" /etc/localtime > /dev/null
-        ${sudo_cmd:+$sudo_cmd} dpkg-reconfigure -f noninteractive tzdata > /dev/null
-    else
-        echo -e "${RED}Error: Invalid timezone: ${timezone}${NC}"
-        return 1
-    fi
-}
-
-# =============================================================================
-# INPUT VALIDATION
-# =============================================================================
-
-# Validate input based on type
+# Predicate: validate input based on type
 # Parameters:
 # $1 - The input value to validate
 # $2 - The type of the variable (y/n, num, str, email, host)
 # $3 - The name of the variable (used for error messages)
-function validate_input() {
+# Returns: 0 if valid, 1 if invalid
+function is_valid() {
     local input="$1"
     local var_type="$2"
     local var_name="$3"
@@ -377,8 +240,11 @@ function validate_input() {
     esac
 }
 
-# Prompt the user for input.
-# If the user doesn't provide a value, the default value is assigned.
+# =============================================================================
+# PROMPTS
+# =============================================================================
+
+# Prompt the user for input with validation.
 # Checks environment variables first for non-interactive usage.
 # Parameters:
 # $1 - The variable name (will be all caps)
@@ -386,8 +252,8 @@ function validate_input() {
 # $3 - The prompt to display to the user
 # $4 - (Optional) The type of the variable (y/n, num, str, email, host). Default is str.
 # Example:
-# ask_user "MY_NUM" "1" "Please enter a number" "num"
-function ask_user() {
+# prompt_user "MY_NUM" "1" "Please enter a number" "num"
+function prompt_user() {
     local var_name="$1"
     local default_value="$2"
     local prompt="$3"
@@ -398,7 +264,7 @@ function ask_user() {
     # Check if the environment variable is already set and validate
     if [[ -n "${!var_name:-}" ]]; then
         input="${!var_name}"
-        if ! validate_input "$input" "$var_type" "$var_name"; then
+        if ! is_valid "$input" "$var_type" "$var_name"; then
             echo "Error: Invalid value for $var_name. Exiting script."
             exit 1
         fi
@@ -406,7 +272,7 @@ function ask_user() {
         while true; do
             read -r -p "${prompt} [default: ${default_value}]: " input
             input="${input:-$default_value}"
-            if validate_input "$input" "$var_type" "$var_name"; then
+            if is_valid "$input" "$var_type" "$var_name"; then
                 break
             fi
         done
@@ -415,6 +281,146 @@ function ask_user() {
     # Use nameref instead of eval for safety
     declare -n _ref="$var_name"
     _ref="$input"
+}
+
+# =============================================================================
+# APT PACKAGE MANAGEMENT
+# =============================================================================
+
+# Update the OS using apt package manager.
+# Parameters:
+# --silent - (Optional) Suppress output
+function apt_update() {
+    assert_tool apt
+
+    local silent=false
+    if _is_flag "--silent" "$@"; then
+        silent=true
+    fi
+
+    local sudo_cmd
+    sudo_cmd=$(get_sudo)
+
+    # Save current env vars
+    local old_debian_frontend="${DEBIAN_FRONTEND:-}"
+    local old_debconf_seen="${DEBCONF_NONINTERACTIVE_SEEN:-}"
+
+    if [[ "$silent" == true ]]; then
+        echo -e "${BLUE}►► Updating all OS packages in silent mode...${NC}"
+        export DEBIAN_FRONTEND="noninteractive"
+        export DEBCONF_NONINTERACTIVE_SEEN=true
+
+        ${sudo_cmd:+$sudo_cmd} apt-get -qq -y \
+            -o Dpkg::Options::="--force-confdef" \
+            -o Dpkg::Options::="--force-confold" \
+            update > /dev/null 2>&1
+
+        ${sudo_cmd:+$sudo_cmd} apt-get -qq -y \
+            -o Dpkg::Options::="--force-confdef" \
+            -o Dpkg::Options::="--force-confold" \
+            full-upgrade > /dev/null 2>&1
+
+        ${sudo_cmd:+$sudo_cmd} apt-get -qq -y autoremove > /dev/null 2>&1
+    else
+        echo -e "${BLUE}►► Updating all OS packages...${NC}"
+        ${sudo_cmd:+$sudo_cmd} apt-get -qq -y update
+        ${sudo_cmd:+$sudo_cmd} apt-get -qq -y full-upgrade
+        ${sudo_cmd:+$sudo_cmd} apt-get -qq -y autoremove
+    fi
+
+    # Restore env vars
+    if [[ -n "$old_debian_frontend" ]]; then
+        export DEBIAN_FRONTEND="$old_debian_frontend"
+    else
+        unset DEBIAN_FRONTEND 2>/dev/null || true
+    fi
+    if [[ -n "$old_debconf_seen" ]]; then
+        export DEBCONF_NONINTERACTIVE_SEEN="$old_debconf_seen"
+    else
+        unset DEBCONF_NONINTERACTIVE_SEEN 2>/dev/null || true
+    fi
+}
+
+# Install packages using apt package manager.
+# Parameters:
+# --silent - (Optional) Suppress output
+# $@ - Package names to install
+function apt_install() {
+    local silent=false
+    local packages=()
+
+    # Parse arguments
+    for arg in "$@"; do
+        if [[ "$arg" == "--silent" ]]; then
+            silent=true
+        else
+            packages+=("$arg")
+        fi
+    done
+
+    if [[ ${#packages[@]} -eq 0 ]]; then
+        echo -e "${RED}Error: No packages specified.${NC}"
+        return 1
+    fi
+
+    assert_tool apt
+
+    local sudo_cmd
+    sudo_cmd=$(get_sudo)
+
+    # Save current env vars
+    local old_debian_frontend="${DEBIAN_FRONTEND:-}"
+    local old_debconf_seen="${DEBCONF_NONINTERACTIVE_SEEN:-}"
+
+    echo -e "${BLUE}►► Installing packages...${NC}"
+
+    if [[ "$silent" == true ]]; then
+        export DEBIAN_FRONTEND="noninteractive"
+        export DEBCONF_NONINTERACTIVE_SEEN=true
+
+        ${sudo_cmd:+$sudo_cmd} apt-get update > /dev/null 2>&1
+        ${sudo_cmd:+$sudo_cmd} apt-get install -y \
+            -o Dpkg::Options::="--force-confdef" \
+            -o Dpkg::Options::="--force-confold" \
+            "${packages[@]}" > /dev/null 2>&1
+    else
+        ${sudo_cmd:+$sudo_cmd} apt-get update
+        ${sudo_cmd:+$sudo_cmd} apt-get install -y "${packages[@]}"
+    fi
+
+    # Restore env vars
+    if [[ -n "$old_debian_frontend" ]]; then
+        export DEBIAN_FRONTEND="$old_debian_frontend"
+    else
+        unset DEBIAN_FRONTEND 2>/dev/null || true
+    fi
+    if [[ -n "$old_debconf_seen" ]]; then
+        export DEBCONF_NONINTERACTIVE_SEEN="$old_debconf_seen"
+    else
+        unset DEBCONF_NONINTERACTIVE_SEEN 2>/dev/null || true
+    fi
+}
+
+# =============================================================================
+# SETTERS
+# =============================================================================
+
+# Set the system timezone.
+# Parameters:
+# $1 - A valid timezone, e.g. "Europe/Amsterdam"
+function set_timezone() {
+    local timezone="$1"
+    local sudo_cmd
+    sudo_cmd=$(get_sudo)
+
+    if [[ -f "/usr/share/zoneinfo/${timezone}" ]]; then
+        echo -e "${BLUE}►► Setting timezone to ${timezone}...${NC}"
+        ${sudo_cmd:+$sudo_cmd} ln -fs "/usr/share/zoneinfo/$timezone" /etc/localtime > /dev/null
+        ${sudo_cmd:+$sudo_cmd} dpkg-reconfigure -f noninteractive tzdata > /dev/null
+    else
+        echo -e "${RED}Error: Invalid timezone: ${timezone}${NC}"
+        return 1
+    fi
 }
 
 # =============================================================================
@@ -428,7 +434,7 @@ function ask_user() {
 # 0 - Backup created successfully
 # 1 - Backup failed
 # 2 - File does not exist (no backup needed)
-function backup_file() {
+function file_backup() {
     local file="$1"
 
     if [[ ! -f "$file" ]]; then
@@ -438,7 +444,7 @@ function backup_file() {
     local backup_path
     backup_path="${file}.bak.$(date +%Y%m%d%H%M%S)"
     local sudo_cmd
-    sudo_cmd=$(get_sudo_if_needed)
+    sudo_cmd=$(get_sudo)
 
     ${sudo_cmd:+$sudo_cmd} cp "$file" "$backup_path"
 
@@ -451,25 +457,25 @@ function backup_file() {
     fi
 }
 
-# Downloads one or more files using curl with error handling and optional backup
+# Download one or more files using curl with error handling and optional backup
 # Usage:
-#   Single file: download_file URL DEST DESCRIPTION [--backup]
-#   Multiple files: download_file -m DEST_DIR DESCRIPTION [--backup] "URL|FILENAME" ...
+#   Single file: file_download URL DEST DESCRIPTION [--backup]
+#   Multiple files: file_download -m DEST_DIR DESCRIPTION [--backup] "URL|FILENAME" ...
 #
 # Note: In multi-mode, use | as delimiter between URL and filename to support URLs with ports
 #
 # Examples:
 #   # Single file without backup
-#   download_file "http://example.com/file.txt" "/tmp/file.txt" "configuration file"
+#   file_download "http://example.com/file.txt" "/tmp/file.txt" "configuration file"
 #
 #   # Single file with backup
-#   download_file "http://example.com/file.txt" "/tmp/file.txt" "configuration file" --backup
+#   file_download "http://example.com/file.txt" "/tmp/file.txt" "configuration file" --backup
 #
 #   # Multiple files with port in URL
-#   download_file -m "/tmp" "library files" \
+#   file_download -m "/tmp" "library files" \
 #     "http://server:8080/file1.txt|file1.txt" \
 #     "http://server:8080/file2.txt|file2.txt"
-function download_file() {
+function file_download() {
     local dest dest_dir description backup_option=false
     local failed=0
     local temp_file
@@ -500,7 +506,7 @@ function download_file() {
         fi
 
         local sudo_cmd
-        sudo_cmd=$(get_sudo_if_needed)
+        sudo_cmd=$(get_sudo)
 
         # Download each file
         for url_file in "$@"; do
@@ -511,7 +517,7 @@ function download_file() {
 
             # Backup if requested
             if [[ "$backup_option" == true ]]; then
-                backup_file "${file_dest}" || true
+                file_backup "${file_dest}" || true
             fi
 
             if [[ -z "$sudo_cmd" ]]; then
@@ -546,11 +552,11 @@ function download_file() {
 
         # Backup if requested
         if [[ "$backup_option" == true ]]; then
-            backup_file "${dest}" || true
+            file_backup "${dest}" || true
         fi
 
         local sudo_cmd
-        sudo_cmd=$(get_sudo_if_needed)
+        sudo_cmd=$(get_sudo)
 
         if [[ -z "$sudo_cmd" ]]; then
             # Running as root, download directly
