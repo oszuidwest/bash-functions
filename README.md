@@ -27,6 +27,27 @@ apt_install --silent nginx certbot
 echo -e "${GREEN}Setup complete for ${DOMAIN}${NC}"
 ```
 
+## Function Overview
+
+Quick reference of all functions. Click a function name to jump to detailed documentation.
+
+| Function | Description | Behavior |
+|----------|-------------|----------|
+| [`assert_os_linux`](#assertions-exit-on-failure) | Require Linux OS | exits |
+| [`assert_os_64bit`](#assertions-exit-on-failure) | Require 64-bit OS | exits |
+| [`assert_tool`](#assertions-exit-on-failure) | Require tools installed | exits |
+| [`assert_user_privileged`](#assertions-exit-on-failure) | Require root or regular user | exits |
+| [`assert_hw_rpi`](#assertions-exit-on-failure) | Require Raspberry Pi model | exits |
+| [`is_valid`](#predicates-return-0-or-1) | Validate input value | returns 0/1 |
+| [`get_sudo`](#getters-echo-a-value) | Get sudo prefix if needed | echoes |
+| [`prompt_user`](#prompts-interactive-input) | Interactive user input | sets var |
+| [`apt_update`](#apt-package-management) | Update all packages | — |
+| [`apt_install`](#apt-package-management) | Install packages | returns 0/1 |
+| [`set_colors`](#colors) | Initialize color variables | sets vars |
+| [`set_timezone`](#setters) | Set system timezone | returns 0/1 |
+| [`file_backup`](#file-operations) | Create timestamped backup | returns 0/1/2 |
+| [`file_download`](#file-operations) | Download file(s) with retry | returns 0/1 |
+
 ## Function Reference
 
 ### Assertions (exit on failure)
