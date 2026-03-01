@@ -1,11 +1,11 @@
-# bash-functions v2
+# bash-functions
 
 A Bash shell library providing common utility functions for Debian-like environments.
 
 ## Installation
 
 ```bash
-curl -s -o /tmp/functions.sh https://raw.githubusercontent.com/oszuidwest/bash-functions/v2/common-functions.sh
+curl -s -o /tmp/functions.sh https://raw.githubusercontent.com/oszuidwest/bash-functions/main/common-functions.sh
 source /tmp/functions.sh
 ```
 
