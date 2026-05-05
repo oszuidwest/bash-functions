@@ -283,6 +283,74 @@ function prompt_user() {
     _ref="$input"
 }
 
+# Prompt the user for a required value (no default, must be non-empty and valid).
+# Checks environment variables first for non-interactive usage.
+# Parameters:
+# $1 - The variable name (will be all caps)
+# $2 - The prompt to display to the user
+# $3 - (Optional) The type of the variable (y/n, num, str, email, host). Default is str.
+# Example:
+# prompt_required "MY_HOST" "Please enter a hostname" "host"
+function prompt_required() {
+    local var_name="$1"
+    local prompt="$2"
+    local var_type="${3:-str}"
+
+    local input
+
+    # Check if the environment variable is already set and validate
+    if [[ -n "${!var_name:-}" ]]; then
+        input="${!var_name}"
+        if ! is_valid "$input" "$var_type" "$var_name"; then
+            echo "Error: Invalid value for $var_name. Exiting script."
+            exit 1
+        fi
+    else
+        while true; do
+            read -r -p "${prompt}: " input
+            if is_valid "$input" "$var_type" "$var_name"; then
+                break
+            fi
+        done
+    fi
+
+    # Use nameref instead of eval for safety
+    declare -n _ref="$var_name"
+    _ref="$input"
+}
+
+# Prompt the user for a secret (input is hidden, must be non-empty).
+# Checks environment variables first for non-interactive usage.
+# Parameters:
+# $1 - The variable name (will be all caps)
+# $2 - The prompt to display to the user
+# Example:
+# prompt_secret "MY_PASSWORD" "Please enter your password"
+function prompt_secret() {
+    local var_name="$1"
+    local prompt="$2"
+
+    local input
+
+    # Check if the environment variable is already set
+    if [[ -n "${!var_name:-}" ]]; then
+        input="${!var_name}"
+    else
+        while true; do
+            read -r -s -p "${prompt}: " input
+            echo
+            if [[ -n "$input" ]]; then
+                break
+            fi
+            echo "Invalid value for $var_name. Expected a non-empty string."
+        done
+    fi
+
+    # Use nameref instead of eval for safety
+    declare -n _ref="$var_name"
+    _ref="$input"
+}
+
 # =============================================================================
 # APT PACKAGE MANAGEMENT
 # =============================================================================

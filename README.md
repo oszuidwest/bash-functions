@@ -40,7 +40,9 @@ Quick reference of all functions. Click a function name to jump to detailed docu
 | [`assert_hw_rpi`](#assertions-exit-on-failure) | Require Raspberry Pi model | exits |
 | [`is_valid`](#predicates-return-0-or-1) | Validate input value | returns 0/1 |
 | [`get_sudo`](#getters-echo-a-value) | Get sudo prefix if needed | echoes |
-| [`prompt_user`](#prompts-interactive-input) | Interactive user input | sets var |
+| [`prompt_user`](#prompts-interactive-input) | Interactive user input with default | sets var |
+| [`prompt_required`](#prompts-interactive-input) | Required input (no default, must be valid) | sets var |
+| [`prompt_secret`](#prompts-interactive-input) | Hidden input for secrets | sets var |
 | [`apt_update`](#apt-package-management) | Update all packages | — |
 | [`apt_install`](#apt-package-management) | Install packages | returns 0/1 |
 | [`set_colors`](#colors) | Initialize color variables | sets vars |
@@ -96,6 +98,11 @@ ${sudo_cmd:+$sudo_cmd} systemctl restart nginx
 
 ### Prompts (interactive input)
 
+Three variants for different input shapes. All three pre-fill from environment
+variables (skipping the prompt) for non-interactive usage.
+
+#### `prompt_user` — input with default
+
 ```bash
 prompt_user "VAR_NAME" "default" "Prompt message" "type"
 ```
@@ -116,11 +123,52 @@ prompt_user "EMAIL" "admin@example.com" "Contact email" "email"
 prompt_user "SERVER" "localhost" "Server address" "host"
 ```
 
-**Non-interactive mode:** Set environment variables before running the script:
+#### `prompt_required` — required input (no default)
+
+Use when there is no sensible default and an empty value should re-prompt
+instead of being accepted.
+
+```bash
+prompt_required "VAR_NAME" "Prompt message" "type"
+```
+
+**Parameters:**
+- `VAR_NAME` - Variable name to store result (will be created)
+- `Prompt message` - Text shown to user
+- `type` - Validation type (optional, defaults to `str`)
+
+**Examples:**
+
+```bash
+prompt_required "HOSTNAME" "Public hostname" "host"
+prompt_required "ADMIN_EMAIL" "Administrator email" "email"
+```
+
+#### `prompt_secret` — hidden input for secrets
+
+Input is not echoed to the terminal. Always required (non-empty).
+
+```bash
+prompt_secret "VAR_NAME" "Prompt message"
+```
+
+**Parameters:**
+- `VAR_NAME` - Variable name to store result (will be created)
+- `Prompt message` - Text shown to user
+
+**Example:**
+
+```bash
+prompt_secret "DB_PASSWORD" "Database password"
+```
+
+**Non-interactive mode (all three):** Set environment variables before running
+the script:
 
 ```bash
 export USERNAME="deploy"
 export PORT="3000"
+export DB_PASSWORD="…"
 ./script.sh  # Uses env vars, skips prompts
 ```
 
