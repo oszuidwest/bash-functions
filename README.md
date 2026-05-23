@@ -47,6 +47,7 @@ Quick reference of all functions. Click a function name to jump to detailed docu
 | [`apt_install`](#apt-package-management) | Install packages | returns 0/1 |
 | [`set_colors`](#colors) | Initialize color variables | sets vars |
 | [`set_timezone`](#setters) | Set system timezone | returns 0/1 |
+| [`set_system_hardening_baseline`](#setters) | Apply host hardening baseline | best-effort |
 | [`file_backup`](#file-operations) | Create timestamped backup | returns 0/1/2 |
 | [`file_download`](#file-operations) | Download file(s) with retry | returns 0/1 |
 
@@ -186,7 +187,20 @@ apt_install --silent nginx         # Same, but suppress output
 
 ```bash
 set_timezone "Europe/Amsterdam"    # Returns 1 if timezone invalid
+set_system_hardening_baseline --silent
 ```
+
+`set_system_hardening_baseline` applies a best-effort Debian/Ubuntu/Raspberry
+Pi host baseline:
+
+- Installs `nvme-cli` and `smartmontools` when `apt` is available
+- Enables `smartmontools.service` or `smartd.service` when systemd is available
+- Writes `/etc/systemd/journald.conf.d/99-size-limit.conf` with
+  `SystemMaxUse=512M`, restarts journald, and vacuums existing logs
+
+The function is idempotent and intentionally non-fatal on systems without apt,
+systemd, journalctl, or NVMe hardware. Use `--journald-max-use=1G` to override
+the default journald limit.
 
 ### File Operations
 
@@ -230,7 +244,8 @@ echo -e "${UNDERLINE}Underlined${NC}"
 
 | Flag | Available in | Description |
 |------|--------------|-------------|
-| `--silent` | `apt_update`, `apt_install` | Suppress output, auto-accept prompts |
+| `--silent` | `apt_update`, `apt_install`, `set_system_hardening_baseline` | Suppress output, auto-accept prompts |
+| `--journald-max-use=SIZE` | `set_system_hardening_baseline` | Override journald limit |
 | `--backup` | `file_download` | Backup existing file before overwriting |
 
 Flags can appear anywhere in the argument list:

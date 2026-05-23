@@ -524,6 +524,144 @@ function set_timezone() {
     fi
 }
 
+# Apply baseline Linux host hardening.
+#
+# This is intentionally best-effort: it should improve Debian/Ubuntu/Raspberry
+# Pi hosts when the required platform tools are available, but it must not break
+# installers on systems without apt, systemd, journald, or NVMe hardware.
+#
+# Actions:
+# - Install nvme-cli and smartmontools when apt is available
+# - Enable smart disk monitoring when systemd exposes a smartd service
+# - Limit persistent journald storage and vacuum existing logs
+#
+# Parameters:
+# --silent - (Optional) Suppress apt output
+# --journald-max-use=SIZE - (Optional) Default: 512M
+function set_system_hardening_baseline() {
+    local silent=false
+    local journald_max_use="512M"
+    local arg
+
+    for arg in "$@"; do
+        case "$arg" in
+            --silent)
+                silent=true
+                ;;
+            --journald-max-use=*)
+                journald_max_use="${arg#*=}"
+                ;;
+        esac
+    done
+
+    echo -e "${BLUE}►► Applying system hardening baseline...${NC}"
+
+    local sudo_cmd
+    sudo_cmd=$(get_sudo)
+    if [[ -n "$sudo_cmd" ]] && ! command -v "$sudo_cmd" > /dev/null 2>&1; then
+        echo -e "${YELLOW}Skipping system hardening: sudo is not available.${NC}"
+        return 0
+    fi
+
+    _install_disk_health_tools "$silent" || true
+    _enable_smart_monitoring || true
+    _limit_journald_storage "$journald_max_use" || true
+}
+
+function _install_disk_health_tools() {
+    local silent="$1"
+    local package
+
+    if ! command -v apt > /dev/null 2>&1; then
+        echo -e "${YELLOW}Skipping disk health tools: apt is not available.${NC}"
+        return 0
+    fi
+
+    for package in nvme-cli smartmontools; do
+        if command -v dpkg > /dev/null 2>&1 && dpkg -s "$package" > /dev/null 2>&1; then
+            echo -e "${GREEN}✓ ${package} is already installed${NC}"
+            continue
+        fi
+
+        if [[ "$silent" == true ]]; then
+            if ! apt_install --silent "$package"; then
+                echo -e "${YELLOW}Warning: failed to install ${package}; continuing.${NC}"
+            fi
+        elif ! apt_install "$package"; then
+            echo -e "${YELLOW}Warning: failed to install ${package}; continuing.${NC}"
+        fi
+    done
+}
+
+function _has_systemd() {
+    command -v systemctl > /dev/null 2>&1 && [[ -d /run/systemd/system ]]
+}
+
+function _enable_smart_monitoring() {
+    if ! _has_systemd; then
+        echo -e "${YELLOW}Skipping smartd activation: systemd is not available.${NC}"
+        return 0
+    fi
+
+    local sudo_cmd service
+    sudo_cmd=$(get_sudo)
+
+    for service in smartmontools.service smartd.service; do
+        if systemctl list-unit-files "$service" 2>/dev/null | awk '{print $1}' | grep -qx "$service"; then
+            echo -e "${BLUE}►► Enabling ${service}...${NC}"
+            if ${sudo_cmd:+$sudo_cmd} systemctl enable --now "$service" > /dev/null 2>&1; then
+                echo -e "${GREEN}✓ ${service} is enabled${NC}"
+            else
+                echo -e "${YELLOW}Warning: failed to enable ${service}; continuing.${NC}"
+            fi
+            return 0
+        fi
+    done
+
+    echo -e "${YELLOW}Skipping smartd activation: no smartmontools systemd service found.${NC}"
+}
+
+function _limit_journald_storage() {
+    local max_use="$1"
+
+    if ! _has_systemd || ! command -v journalctl > /dev/null 2>&1; then
+        echo -e "${YELLOW}Skipping journald limit: systemd/journalctl is not available.${NC}"
+        return 0
+    fi
+
+    local sudo_cmd conf_dir conf_file temp_file
+    sudo_cmd=$(get_sudo)
+    conf_dir="/etc/systemd/journald.conf.d"
+    conf_file="${conf_dir}/99-size-limit.conf"
+    temp_file=$(mktemp)
+
+    printf '[Journal]\nSystemMaxUse=%s\n' "$max_use" > "$temp_file"
+
+    echo -e "${BLUE}►► Limiting journald storage to ${max_use}...${NC}"
+    if ! ${sudo_cmd:+$sudo_cmd} mkdir -p "$conf_dir"; then
+        echo -e "${YELLOW}Warning: failed to create ${conf_dir}; continuing.${NC}"
+        rm -f "$temp_file"
+        return 0
+    fi
+
+    if ! ${sudo_cmd:+$sudo_cmd} install -m 0644 "$temp_file" "$conf_file"; then
+        echo -e "${YELLOW}Warning: failed to write ${conf_file}; continuing.${NC}"
+        rm -f "$temp_file"
+        return 0
+    fi
+    rm -f "$temp_file"
+
+    if ! ${sudo_cmd:+$sudo_cmd} systemctl restart systemd-journald.service > /dev/null 2>&1; then
+        echo -e "${YELLOW}Warning: failed to restart systemd-journald; continuing.${NC}"
+    fi
+
+    if ${sudo_cmd:+$sudo_cmd} journalctl --vacuum-size="$max_use" > /dev/null 2>&1; then
+        echo -e "${GREEN}✓ journald storage limit applied${NC}"
+    else
+        echo -e "${YELLOW}Warning: failed to vacuum journald logs; continuing.${NC}"
+    fi
+}
+
 # =============================================================================
 # FILE OPERATIONS
 # =============================================================================
