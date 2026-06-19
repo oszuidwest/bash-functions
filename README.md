@@ -47,6 +47,8 @@ Quick reference of all functions. Click a function name to jump to detailed docu
 | [`apt_install`](#apt-package-management) | Install packages | returns 0/1 |
 | [`set_colors`](#colors) | Initialize color variables | sets vars |
 | [`set_timezone`](#setters) | Set system timezone | returns 0/1 |
+| [`set_time_sync`](#setters) | Enable system time synchronization | returns 0/1 |
+| [`set_journald_limits`](#setters) | Limit journald storage | returns 0/1 |
 | [`file_backup`](#file-operations) | Create timestamped backup | returns 0/1/2 |
 | [`file_download`](#file-operations) | Download file(s) with retry | returns 0/1 |
 
@@ -186,7 +188,21 @@ apt_install --silent nginx         # Same, but suppress output
 
 ```bash
 set_timezone "Europe/Amsterdam"    # Returns 1 if timezone invalid
+set_time_sync                       # Enable NTP when systemd/timedatectl exist
+set_journald_limits                 # SystemMaxUse=512M, RuntimeMaxUse=128M
+set_journald_limits 1G 256M         # Custom SystemMaxUse and RuntimeMaxUse
+set_journald_limits 512M 128M --vacuum
 ```
+
+`set_time_sync` enables system time synchronization through `timedatectl` when
+the host is running systemd. It is safe to call from installers that also run on
+non-systemd hosts: unsupported systems are skipped without error.
+
+`set_journald_limits` writes a managed drop-in at
+`/etc/systemd/journald.conf.d/90-bash-functions-size-limit.conf`, restarts
+`systemd-journald`, and optionally vacuums archived logs when `--vacuum` is
+provided. Size values must be positive numbers with an optional `K`, `M`, `G`,
+`T`, `P`, or `E` suffix.
 
 ### File Operations
 
@@ -231,6 +247,7 @@ echo -e "${UNDERLINE}Underlined${NC}"
 | Flag | Available in | Description |
 |------|--------------|-------------|
 | `--silent` | `apt_update`, `apt_install` | Suppress output, auto-accept prompts |
+| `--vacuum` | `set_journald_limits` | Vacuum archived journald logs after applying limits |
 | `--backup` | `file_download` | Backup existing file before overwriting |
 
 Flags can appear anywhere in the argument list:
@@ -273,6 +290,20 @@ apt_install nginx php --silent    # Flag last
 |------|---------|
 | 0 | Timezone set successfully |
 | 1 | Invalid timezone |
+
+**`set_time_sync`:**
+
+| Code | Meaning |
+|------|---------|
+| 0 | Time synchronization enabled, already enabled, or unsupported host skipped |
+| 1 | Host supports time sync configuration, but enabling it failed |
+
+**`set_journald_limits`:**
+
+| Code | Meaning |
+|------|---------|
+| 0 | Journald limits applied, or unsupported host skipped |
+| 1 | Invalid size value or failed systemd/journald configuration |
 
 ### Handling Errors
 
