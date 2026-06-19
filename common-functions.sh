@@ -43,6 +43,17 @@ function _strip_flag() {
     done
 }
 
+# Predicate: check if the host is booted with systemd as service manager.
+function _has_systemd() {
+    command -v systemctl > /dev/null 2>&1 && [[ -d /run/systemd/system ]]
+}
+
+# Predicate: validate a systemd size value (bytes or K/M/G/T/P/E suffix).
+function _is_valid_systemd_size() {
+    local size="$1"
+    [[ "$size" =~ ^[1-9][0-9]*([KMGTPE])?$ ]]
+}
+
 # =============================================================================
 # INITIALIZATION
 # =============================================================================
@@ -522,6 +533,155 @@ function set_timezone() {
         echo -e "${RED}Error: Invalid timezone: ${timezone}${NC}"
         return 1
     fi
+}
+
+# Enable system time synchronization when systemd/timedatectl are available.
+# Returns 0 when enabled, already enabled, or safely skipped on unsupported hosts.
+# Returns 1 when a supported host cannot be changed.
+function set_time_sync() {
+    if [[ $# -ne 0 ]]; then
+        echo -e "${RED}Error: set_time_sync does not accept arguments.${NC}"
+        return 1
+    fi
+
+    if ! _has_systemd || ! command -v timedatectl > /dev/null 2>&1; then
+        echo -e "${YELLOW}Skipping time synchronization: systemd/timedatectl is not available.${NC}"
+        return 0
+    fi
+
+    local ntp_state
+    ntp_state=$(timedatectl show -p NTP 2>/dev/null || true)
+    if [[ "$ntp_state" == "NTP=yes" ]]; then
+        echo -e "${GREEN}Time synchronization is already enabled.${NC}"
+        return 0
+    fi
+
+    local sudo_cmd
+    sudo_cmd=$(get_sudo)
+    if [[ -n "$sudo_cmd" ]] && ! command -v "$sudo_cmd" > /dev/null 2>&1; then
+        echo -e "${RED}Error: sudo is required to enable time synchronization but is not available.${NC}"
+        return 1
+    fi
+
+    echo -e "${BLUE}►► Enabling system time synchronization...${NC}"
+    if ${sudo_cmd:+$sudo_cmd} timedatectl set-ntp true > /dev/null 2>&1; then
+        echo -e "${GREEN}Time synchronization enabled.${NC}"
+        return 0
+    fi
+
+    echo -e "${RED}Error: failed to enable time synchronization.${NC}"
+    return 1
+}
+
+# Limit systemd-journald storage usage.
+# Parameters:
+# $1 - (Optional) SystemMaxUse value. Default: 512M
+# $2 - (Optional) RuntimeMaxUse value. Default: 128M
+# --vacuum - (Optional) Vacuum archived logs after applying the limit
+function set_journald_limits() {
+    local system_max_use="512M"
+    local runtime_max_use="128M"
+    local vacuum=false
+    local values=()
+    local arg
+
+    for arg in "$@"; do
+        case "$arg" in
+            --vacuum)
+                vacuum=true
+                ;;
+            --*)
+                echo -e "${RED}Error: unknown option for set_journald_limits.${NC}"
+                return 1
+                ;;
+            *)
+                values+=("$arg")
+                ;;
+        esac
+    done
+
+    if [[ ${#values[@]} -gt 2 ]]; then
+        echo -e "${RED}Error: set_journald_limits accepts at most two size values.${NC}"
+        return 1
+    fi
+
+    if [[ ${#values[@]} -ge 1 ]]; then
+        system_max_use="${values[0]}"
+    fi
+    if [[ ${#values[@]} -ge 2 ]]; then
+        runtime_max_use="${values[1]}"
+    fi
+
+    if ! _is_valid_systemd_size "$system_max_use"; then
+        echo -e "${RED}Error: invalid SystemMaxUse value.${NC}"
+        return 1
+    fi
+    if ! _is_valid_systemd_size "$runtime_max_use"; then
+        echo -e "${RED}Error: invalid RuntimeMaxUse value.${NC}"
+        return 1
+    fi
+
+    if ! _has_systemd || ! command -v journalctl > /dev/null 2>&1; then
+        echo -e "${YELLOW}Skipping journald limits: systemd/journalctl is not available.${NC}"
+        return 0
+    fi
+
+    local sudo_cmd
+    sudo_cmd=$(get_sudo)
+    if [[ -n "$sudo_cmd" ]] && ! command -v "$sudo_cmd" > /dev/null 2>&1; then
+        echo -e "${RED}Error: sudo is required to configure journald but is not available.${NC}"
+        return 1
+    fi
+
+    local conf_dir conf_file temp_file
+    conf_dir="/etc/systemd/journald.conf.d"
+    conf_file="${conf_dir}/90-bash-functions-size-limit.conf"
+
+    if ! temp_file=$(mktemp); then
+        echo -e "${RED}Error: failed to create temporary journald config.${NC}"
+        return 1
+    fi
+
+    {
+        printf '# Managed by bash-functions set_journald_limits\n'
+        printf '[Journal]\n'
+        printf 'SystemMaxUse=%s\n' "$system_max_use"
+        printf 'RuntimeMaxUse=%s\n' "$runtime_max_use"
+    } > "$temp_file"
+
+    echo -e "${BLUE}►► Setting journald limits: SystemMaxUse=${system_max_use}, RuntimeMaxUse=${runtime_max_use}...${NC}"
+    if ! ${sudo_cmd:+$sudo_cmd} mkdir -p "$conf_dir"; then
+        echo -e "${RED}Error: failed to create ${conf_dir}.${NC}"
+        rm -f "$temp_file"
+        return 1
+    fi
+
+    if ! ${sudo_cmd:+$sudo_cmd} install -m 0644 "$temp_file" "$conf_file"; then
+        echo -e "${RED}Error: failed to write ${conf_file}.${NC}"
+        rm -f "$temp_file"
+        return 1
+    fi
+    rm -f "$temp_file"
+
+    if ! ${sudo_cmd:+$sudo_cmd} systemctl restart systemd-journald.service > /dev/null 2>&1; then
+        echo -e "${RED}Error: failed to restart systemd-journald.${NC}"
+        return 1
+    fi
+
+    if [[ "$vacuum" == true ]]; then
+        local vacuum_size
+        vacuum_size="$system_max_use"
+        if [[ ! -d /var/log/journal ]]; then
+            vacuum_size="$runtime_max_use"
+        fi
+
+        if ! ${sudo_cmd:+$sudo_cmd} journalctl --vacuum-size="$vacuum_size" > /dev/null 2>&1; then
+            echo -e "${RED}Error: failed to vacuum journald logs.${NC}"
+            return 1
+        fi
+    fi
+
+    echo -e "${GREEN}Journald limits applied.${NC}"
 }
 
 # =============================================================================
