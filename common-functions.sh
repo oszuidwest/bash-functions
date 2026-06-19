@@ -550,6 +550,9 @@ function set_time_sync() {
     fi
 
     local ntp_state
+    # Bare assignment propagates the substitution's exit status, so `|| true` is
+    # load-bearing: it keeps `set -e` callers alive when timedatectl errors
+    # (e.g. degraded systemd / no timedated). Do not remove.
     ntp_state=$(timedatectl show -p NTP 2>/dev/null || true)
     if [[ "$ntp_state" == "NTP=yes" ]]; then
         echo -e "${GREEN}Time synchronization is already enabled.${NC}"
@@ -558,13 +561,9 @@ function set_time_sync() {
 
     local sudo_cmd
     sudo_cmd=$(get_sudo)
-    if [[ -n "$sudo_cmd" ]] && ! command -v "$sudo_cmd" > /dev/null 2>&1; then
-        echo -e "${RED}Error: sudo is required to enable time synchronization but is not available.${NC}"
-        return 1
-    fi
 
     echo -e "${BLUE}►► Enabling system time synchronization...${NC}"
-    if ${sudo_cmd:+$sudo_cmd} timedatectl set-ntp true > /dev/null 2>&1; then
+    if ${sudo_cmd:+$sudo_cmd} timedatectl set-ntp true > /dev/null; then
         echo -e "${GREEN}Time synchronization enabled.${NC}"
         return 0
     fi
@@ -628,10 +627,6 @@ function set_journald_limits() {
 
     local sudo_cmd
     sudo_cmd=$(get_sudo)
-    if [[ -n "$sudo_cmd" ]] && ! command -v "$sudo_cmd" > /dev/null 2>&1; then
-        echo -e "${RED}Error: sudo is required to configure journald but is not available.${NC}"
-        return 1
-    fi
 
     local conf_dir conf_file temp_file
     conf_dir="/etc/systemd/journald.conf.d"
@@ -663,25 +658,23 @@ function set_journald_limits() {
     fi
     rm -f "$temp_file"
 
-    if ! ${sudo_cmd:+$sudo_cmd} systemctl restart systemd-journald.service > /dev/null 2>&1; then
-        echo -e "${RED}Error: failed to restart systemd-journald.${NC}"
+    if ! ${sudo_cmd:+$sudo_cmd} systemctl restart systemd-journald.service > /dev/null; then
+        echo -e "${RED}Error: failed to restart systemd-journald. ${conf_file} was written and will apply once systemd-journald restarts successfully.${NC}"
         return 1
     fi
 
     if [[ "$vacuum" == true ]]; then
-        local vacuum_size
-        vacuum_size="$system_max_use"
-        if [[ ! -d /var/log/journal ]]; then
-            vacuum_size="$runtime_max_use"
-        fi
+        local vacuum_size="$system_max_use"
+        [[ -d /var/log/journal ]] || vacuum_size="$runtime_max_use"
 
-        if ! ${sudo_cmd:+$sudo_cmd} journalctl --vacuum-size="$vacuum_size" > /dev/null 2>&1; then
+        if ! ${sudo_cmd:+$sudo_cmd} journalctl --vacuum-size="$vacuum_size" > /dev/null; then
             echo -e "${RED}Error: failed to vacuum journald logs.${NC}"
             return 1
         fi
     fi
 
     echo -e "${GREEN}Journald limits applied.${NC}"
+    return 0
 }
 
 # =============================================================================
