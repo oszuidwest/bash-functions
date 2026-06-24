@@ -685,14 +685,16 @@ function set_journald_limits() {
 # Parameters:
 # $1 - The path to the file to backup
 # Returns:
-# 0 - Backup created successfully
+# 0 - Backup created, or nothing to back up (file absent)
 # 1 - Backup failed
-# 2 - File does not exist (no backup needed)
 function file_backup() {
     local file="$1"
 
+    # Nothing to back up is success, not an error: this keeps the common
+    # "back up before overwrite" call set -e-safe (file_backup "$f" || exit 1)
+    # without forcing every caller to add an [ -f "$f" ] guard.
     if [[ ! -f "$file" ]]; then
-        return 2
+        return 0
     fi
 
     local backup_path
@@ -769,9 +771,11 @@ function file_download() {
             local url="${url_file%|*}"
             local file_dest="${dest_dir}/${filename}"
 
-            # Backup if requested
-            if [[ "$backup_option" == true ]]; then
-                file_backup "${file_dest}" || true
+            # Backup if requested; a real backup failure must not be masked,
+            # so skip the download rather than overwrite an un-backed-up file
+            if [[ "$backup_option" == true ]] && ! file_backup "${file_dest}"; then
+                failed=1
+                continue
             fi
 
             if [[ -z "$sudo_cmd" ]]; then
@@ -804,9 +808,10 @@ function file_download() {
             backup_option=true
         fi
 
-        # Backup if requested
-        if [[ "$backup_option" == true ]]; then
-            file_backup "${dest}" || true
+        # Backup if requested; abort on a real backup failure rather than
+        # overwrite an un-backed-up file
+        if [[ "$backup_option" == true ]] && ! file_backup "${dest}"; then
+            return 1
         fi
 
         local sudo_cmd

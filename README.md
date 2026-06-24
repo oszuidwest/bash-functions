@@ -49,7 +49,7 @@ Quick reference of all functions. Click a function name to jump to detailed docu
 | [`set_timezone`](#setters) | Set system timezone | returns 0/1 |
 | [`set_time_sync`](#setters) | Enable system time synchronization | returns 0/1 |
 | [`set_journald_limits`](#setters) | Limit journald storage | returns 0/1 |
-| [`file_backup`](#file-operations) | Create timestamped backup | returns 0/1/2 |
+| [`file_backup`](#file-operations) | Create timestamped backup | returns 0/1 |
 | [`file_download`](#file-operations) | Download file(s) with retry | returns 0/1 |
 
 ## Function Reference
@@ -266,9 +266,15 @@ apt_install nginx php --silent    # Flag last
 
 | Code | Meaning |
 |------|---------|
-| 0 | Backup created successfully |
+| 0 | Backup created, or nothing to back up (file absent) |
 | 1 | Backup failed |
-| 2 | File does not exist (nothing to backup) |
+
+An absent file is treated as success (a no-op), so the backup-before-overwrite
+idiom stays `set -e`-safe without an `[ -f "$file" ]` guard:
+
+```bash
+file_backup "$config" || exit 1   # absent = nothing to do, real failure = exit
+```
 
 **`file_download`:**
 
@@ -314,13 +320,8 @@ if ! file_download "$url" "$dest" "config"; then
     cp /defaults/config.txt "$dest"
 fi
 
-# Handle backup status
-file_backup "/etc/app.conf"
-case $? in
-    0) echo "Backup created" ;;
-    1) echo "Backup failed!" ; exit 1 ;;
-    2) echo "No existing file, skipping backup" ;;
-esac
+# Back up an existing config before overwriting it (absent file = no-op)
+file_backup "/etc/app.conf" || exit 1
 
 # Validate before using
 if ! is_valid "$input" "email" "EMAIL"; then
@@ -414,6 +415,18 @@ is_valid "$input" "num" "PORT"  # Exits if invalid!
 | `download_file` | `file_download` |
 | `download_file ... backup` | `file_download ... --backup` |
 | Multi-file `URL:filename` | Multi-file `URL\|filename` |
+
+### Behavioral changes
+
+**`file_backup` return codes:** `file_backup` no longer returns `2` for an
+absent file — it now returns `0` (absent = nothing to back up = success).
+Callers that branched on `2` (`case $?` / `[ $? -eq 2 ]`) should drop that
+branch; absent and backed-up are both `0` now. This makes the common
+backup-before-overwrite call correct under `set -e`:
+
+```bash
+file_backup "$config" || exit 1   # was unsafe: an absent file returned 2
+```
 
 ## License
 
