@@ -170,7 +170,14 @@ function assert_hw_rpi() {
     }
 
     local detected_model_number
-    if [[ $model =~ Raspberry\ Pi\ ([0-9]+) ]]; then
+    # A compute module has no digit directly after "Raspberry Pi", so the
+    # generic pattern below never matches one.
+    if [[ $model =~ Raspberry\ Pi\ Compute\ Module\ ([0-9]+) ]]; then
+        detected_model_number=${BASH_REMATCH[1]}
+    elif [[ $model == *"Raspberry Pi Compute Module"* ]]; then
+        # The original CM carries no number.
+        detected_model_number=1
+    elif [[ $model =~ Raspberry\ Pi\ ([0-9]+) ]]; then
         detected_model_number=${BASH_REMATCH[1]}
     elif [[ $model == *"Raspberry Pi Model"* ]]; then
         detected_model_number=1
