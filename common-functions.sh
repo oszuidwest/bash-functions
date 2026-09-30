@@ -170,9 +170,10 @@ function assert_hw_rpi() {
     }
 
     local detected_model_number
-    if [[ $model =~ Raspberry\ Pi\ ([0-9]+) ]]; then
-        detected_model_number=${BASH_REMATCH[1]}
-    elif [[ $model == *"Raspberry Pi Model"* ]]; then
+    # A CMn counts as a Pi n; the original CM and Pi 1 carry no number.
+    if [[ $model =~ Raspberry\ Pi\ (Compute\ Module\ )?([0-9]+) ]]; then
+        detected_model_number=${BASH_REMATCH[2]}
+    elif [[ $model =~ Raspberry\ Pi\ (Compute\ Module|Model) ]]; then
         detected_model_number=1
     else
         echo -e "${RED}** NOT RUNNING ON A RECOGNIZED RASPBERRY PI MODEL **${NC}"
